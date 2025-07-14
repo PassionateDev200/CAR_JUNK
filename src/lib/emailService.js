@@ -133,7 +133,7 @@ const generateQuoteEmailHTML = ({
 
         <div class="footer">
           <p><strong>PNW Cash for Cars</strong></p>
-          <p>Questions? Reply to this email or call us at (555) 123-4567</p>
+          <p>Questions? Reply to this email or call us at (971) 398-7852</p>
           <p style="font-size: 12px; margin-top: 20px;">
             This offer is valid for 7 days from the date of this email. 
             Vehicle condition will be verified during pickup.
@@ -193,7 +193,7 @@ ${quoteUrl}
 
 This offer expires in 7 days. Click the link above to accept your offer and schedule pickup.
 
-Questions? Reply to this email or call us at (555) 123-4567
+Questions? Reply to this email or call us at (971) 398-7852
 
 Best regards,
 PNW Cash for Cars Team

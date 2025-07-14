@@ -423,7 +423,7 @@ export default function PricingDisplay({ onComplete }) {
                   </>
                 ) : (
                   <>
-                    Accept Offer & Schedule Pickup
+                    Offer & Schedule
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}

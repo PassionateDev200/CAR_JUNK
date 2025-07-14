@@ -21,14 +21,12 @@ const Footer = () => {
     { href: "/quote", label: "Get Quote" },
     { href: "/how-it-works", label: "How It Works" },
     { href: "/contact", label: "Contact" },
-    { href: "/about", label: "About Us" },
   ];
 
   const supportLinks = [
     { href: "/faqs", label: "FAQ" },
-    { href: "/terms", label: "Terms of Service" },
-    { href: "/privacy", label: "Privacy Policy" },
-    { href: "/support", label: "Customer Support" },
+    { href: "#", label: "About Us" },
+    { href: "#", label: "Customer Support" },
   ];
 
   const socialLinks = [
@@ -176,7 +174,7 @@ const Footer = () => {
               <div className="space-y-4">
                 <div className="flex items-center text-gray-300">
                   <Phone className="w-5 h-5 mr-3 text-blue-400" />
-                  <span>1-800-CASH-CAR</span>
+                  <span>1-971-398-7852</span>
                 </div>
                 <div className="flex items-center text-gray-300">
                   <Mail className="w-5 h-5 mr-3 text-purple-400" />
