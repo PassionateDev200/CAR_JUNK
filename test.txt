@@ -1,0 +1,84 @@
+1HGCM82633A004352
+(2003 Honda Accord)
+
+1FTFW1ET1EFA12345
+(2014 Ford F-150)
+
+JHMCM56557C404453
+(2007 Honda Accord)
+
+2T1BURHE5GC504632
+(2016 Toyota Corolla)
+
+1C4RJFBG5FC625797
+(2015 Jeep Grand Cherokee)
+
+3FA6P0H73DR123456
+(2013 Ford Fusion)
+
+1M8GDM9AXKP042788
+(Sample VIN from Wikipedia)
+
+1P8ZA1279SZ215470
+(Sample VIN showing year code, from FCAR Tech)
+
+
+
+npm config set legacy-peer-deps true
+npx shadcn@latest add dialog button badge alert dialog
+
+curl -X 'GET' \
+'https://carapi.app/api/makes?year=1990' \
+-H 'accept: application/json'
+--------------------------------
+curl -X 'POST' \
+'https://carapi.app/api/auth/login' \
+-H 'accept: text/plain' \
+-H 'Content-Type: application/json' \
+-d '{
+  "api_token": "dcc82e8e-37f8-480c-83bb-bca2073b2d58",
+  "api_secret": "f8c7e756e3ac2006b8c96cb15cfca9b2"
+}'
+--------
+Token:
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJjYXJhcGkuYXBwIiwic3ViIjoiMjYwMmNjNDItMmUzNS00Mjk2LWE3Y2QtNWVmMWFkMTg3ZTMzIiwiYXVkIjoiMjYwMmNjNDItMmUzNS00Mjk2LWE3Y2QtNWVmMWFkMTg3ZTMzIiwiZXhwIjoxNzUwNjU4OTYyLCJpYXQiOjE3NTAwNTQxNjIsImp0aSI6IjEzZTQzYTI3LTc2ZDAtNDMzOC04ZjQ5LTVhYzQ0YzhmYzUwOSIsInVzZXIiOnsic3Vic2NyaXB0aW9ucyI6W10sInJhdGVfbGltaXRfdHlwZSI6ImhhcmQiLCJhZGRvbnMiOnsiYW50aXF1ZV92ZWhpY2xlcyI6ZmFsc2UsImRhdGFfZmVlZCI6ZmFsc2V9fX0.Gmtr_i7-WEiqxGCZiKy7ajJ0ZyBu-Ivedt9yMyFV-uU
+=========================
+# Get Makes
+https://vpic.nhtsa.dot.gov/api/vehicles/GetMakesForVehicleType/car?format=json
+
+# Get Models for a Make
+https://vpic.nhtsa.dot.gov/api/vehicles/getmodelsformake/acura?format=json
+
+
+********************************
+If you understand my needs, Please modify the code of PeddleStyleQuote.jsx and carQueryApi.js.
+Please modify only the necessary parts of the code.
+Do not change and maintain the overall style and page with tab like uploaded picture.
+Please give me the whole code of PeddleStyleQuote.jsx and  carQueryApi.js with marked modified part.
+====================
+First part :
+---------------------1941~2022----------------------------------
+For example;
+- Make info
+https://www.carqueryapi.com/api/0.3/?callback=?&cmd=getMakes&year=2022
+- Model info
+https://www.carqueryapi.com/api/0.3/?callback=?&cmd=getModels&make=acura&year=2022
+- Trim info
+https://www.carqueryapi.com/api/0.3/?callback=?&cmd=getTrims&make=acura&model=mdx&year=2022
+-----------------------------------------------------------------------------------------
+From 1941 to 2022, If I use above API function, I can get Make, Model, Trim of the vehicle by choosing Year of the vehicle.
+====================
+Second part:
+-----------------------2023~current---------------------
+For example;
+- Make info
+https://carapi.app/api/makes?year=2023
+- Model Info
+https://carapi.app/api/models/v2?make=acura&model_year=2023
+---------------------------------------------------
+From 2023 to current, I can get Make of the vehicle by using And then I can get Model info of the vehicle by using above api function.
+Here Trim info of the vehicle is optional Item.
+
+
+
+

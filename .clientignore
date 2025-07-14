@@ -1,0 +1,13 @@
+.env
+src/app/api/
+src/utils/
+server/
+config/
+node_modules/
+dist/
+build/
+.next/
+.out/
+*.log
+.DS_Store
+*.local
