@@ -124,7 +124,7 @@ const Footer = () => {
                 Quick Links
               </h4>
               <ul className="space-y-3">
-                {quickLinks.map((link) => (
+                {quickLinks.map((link, index) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
@@ -147,7 +147,7 @@ const Footer = () => {
             >
               <h4 className="text-lg font-semibold mb-6 text-white">Support</h4>
               <ul className="space-y-3">
-                {supportLinks.map((link) => (
+                {supportLinks.map((link, index) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
