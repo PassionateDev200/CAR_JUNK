@@ -33,7 +33,7 @@ export default function OffersPage() {
     {
       id: "offer-123",
       vehicleId: "veh-456",
-      amount: 3500,
+      amount: 500,
       status: "pending",
       createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
       expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
@@ -49,7 +49,7 @@ export default function OffersPage() {
     {
       id: "offer-124",
       vehicleId: "veh-457",
-      amount: 2800,
+      amount: 800,
       status: "accepted",
       createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
       expiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
@@ -65,7 +65,7 @@ export default function OffersPage() {
     {
       id: "offer-125",
       vehicleId: "veh-458",
-      amount: 1200,
+      amount: 1600,
       status: "expired",
       createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
       expiresAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),

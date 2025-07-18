@@ -59,7 +59,7 @@ const Header = () => {
       icon: <HelpCircle className="w-4 h-4" />,
     },
     {
-      href: "/offer",
+      href: "/manage",
       label: "My Offers",
       icon: <FileText className="w-4 h-4" />,
     },

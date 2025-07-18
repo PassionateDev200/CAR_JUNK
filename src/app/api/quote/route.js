@@ -1,185 +1,186 @@
 /** route: src/app/api/quote/route.js */
 
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/mongodb";
+import connectToDatabase from "@/lib/mongodb";
 import Quote from "@/models/Quote";
-import Customer from "@/models/Customer";
-import { sendQuoteEmail } from "@/lib/emailService";
+import { sendQuoteConfirmationEmail } from "@/lib/emailService";
+import { randomBytes } from "crypto";
+
+function generateAccessToken() {
+  return randomBytes(8).toString("hex"); // Generates exactly 16 hex characters
+}
 
 export async function POST(request) {
   try {
     await connectToDatabase();
 
-    const quoteData = await request.json();
-    console.log("📝 Received quote data:", quoteData);
+    const body = await request.json();
+    const {
+      vehicleDetails,
+      vin,
+      pricing,
+      questionPricing,
+      conditionAnswers,
+      customer,
+      zipCode,
+      locationData,
+    } = body;
 
     // Validate required fields
-    if (
-      !quoteData.vehicleDetails ||
-      !quoteData.sellerInfo ||
-      !quoteData.pricing
-    ) {
+    if (!vehicleDetails || !customer || !pricing) {
       return NextResponse.json(
-        { error: "Missing required quote data" },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Extract zipCode from conditionAnswers if main zipCode is empty
-    const extractedZipCode =
-      quoteData.zipCode || quoteData.conditionAnswers?.zipcode?.zipCode || "";
-    const extractedLocationData =
-      quoteData.locationData ||
-      quoteData.conditionAnswers?.zipcode?.locationData ||
-      null;
+    // Validate customer information
+    if (!customer.name || !customer.email || !customer.phone) {
+      return NextResponse.json(
+        { error: "Customer name, email, and phone are required" },
+        { status: 400 }
+      );
+    }
 
-    // Map sellerInfo to customer for database storage
-    const customerData = {
-      name: quoteData.sellerInfo.name,
-      email: quoteData.sellerInfo.email,
-      phone: quoteData.sellerInfo.phone,
-      address: quoteData.sellerInfo.address || "",
-      zipCode: extractedZipCode,
-    };
+    // Generate unique quote ID
+    const quoteId = `Q-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 4)
+      .toUpperCase()}`;
 
-    // Process mileage data properly
-    const processedConditionAnswers = {
-      ...quoteData.conditionAnswers,
-      // Handle mileage object vs string
-      mileage:
-        typeof quoteData.conditionAnswers.mileage === "object"
-          ? quoteData.conditionAnswers.mileage
-          : quoteData.conditionAnswers.mileage,
-    };
+    // Generate access token for quote management
+    const accessToken = generateAccessToken();
 
-    // Create new quote in database
-    const newQuote = new Quote({
-      vehicleDetails: quoteData.vehicleDetails,
-      vin: quoteData.vin || "",
-      customer: customerData,
-      locationData: extractedLocationData,
+    // Create quote document
+    const quote = new Quote({
+      quoteId,
+      vehicleDetails,
+      vin: vin || "",
+      customer,
+      locationData,
       pricing: {
-        basePrice: quoteData.pricing.basePrice,
-        currentPrice: quoteData.pricing.currentPrice,
-        finalPrice:
-          quoteData.pricing.finalPrice || quoteData.pricing.currentPrice,
+        basePrice: pricing.basePrice || 0,
+        currentPrice: pricing.currentPrice || 0,
+        finalPrice: pricing.finalPrice || pricing.currentPrice || 0,
       },
-      conditionAnswers: processedConditionAnswers,
-      status: "pending",
+      conditionAnswers: conditionAnswers || {},
+      questionPricing: questionPricing || {},
+      vehicleName: `${vehicleDetails.year} ${vehicleDetails.make} ${vehicleDetails.model}`,
+      accessToken,
+      // Set customer action permissions
+      customerActions: {
+        canCancel: true,
+        canReschedule: false, // Will be enabled when quote is accepted
+        actionHistory: [
+          {
+            action: "modified",
+            reason: "quote_submitted",
+            note: "Quote submitted by customer",
+            timestamp: new Date(),
+            customerInitiated: true,
+          },
+        ],
+      },
     });
 
     // Save quote to database
-    const savedQuote = await newQuote.save();
-    console.log("💾 Quote saved to database:", savedQuote.quoteId);
+    await quote.save();
 
-    // Create or update customer
-    let customer = await Customer.findOne({ email: customerData.email });
-
-    if (customer) {
-      customer.totalQuotes += 1;
-      customer.lastActivity = new Date();
-      await customer.save();
-      console.log("👤 Updated existing customer");
-    } else {
-      const newCustomer = new Customer({
-        ...customerData,
-        zipCode: extractedZipCode,
+    // Send confirmation email
+    try {
+      await sendQuoteConfirmationEmail({
+        to: customer.email,
+        customerName: customer.name,
+        quoteId,
+        vehicleName: quote.vehicleName,
+        vehicleDetails,
+        vin,
+        pricing: {
+          finalPrice: pricing.finalPrice || pricing.currentPrice || 0,
+        },
+        accessToken,
       });
-      customer = await newCustomer.save();
-      console.log("🆕 Created new customer");
+
+      console.log(`📧 Quote confirmation email sent to ${customer.email}`);
+    } catch (emailError) {
+      console.error("Failed to send confirmation email:", emailError);
+      // Don't fail the entire request if email fails
     }
 
-    // Send email notification
+    // Send admin notification
     try {
-      await sendQuoteEmail({
-        to: customerData.email, // ✅ Email recipient
-        customerName: customerData.name, // ✅ FIXED: Changed from sellerInfo to customerName
-        quoteId: savedQuote.quoteId,
-        vehicleName: savedQuote.vehicleName,
-        vehicleDetails: savedQuote.vehicleDetails,
-        vin: savedQuote.vin,
-        pricing: {
-          basePrice: savedQuote.pricing.basePrice,
-          currentPrice: savedQuote.pricing.currentPrice,
-          finalPrice: savedQuote.pricing.finalPrice,
+      const { sendAdminNotification } = await import(
+        "@/lib/notificationService"
+      );
+      await sendAdminNotification({
+        type: "new_quote",
+        quoteId,
+        vehicleName: quote.vehicleName,
+        customerName: customer.name,
+        actionType: "quote_submitted",
+        details: {
+          vehicleDetails,
+          pricing: pricing.finalPrice || pricing.currentPrice || 0,
         },
-        quoteUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/offer/${savedQuote.quoteId}`,
       });
-
-      savedQuote.communications.push({
-        type: "email",
-        content: "Quote confirmation email sent",
-        sentAt: new Date(),
-        successful: true,
-      });
-      await savedQuote.save();
-      console.log("📧 Quote email sent successfully");
-    } catch (emailError) {
-      console.error("📧 Email sending failed:", emailError);
-      savedQuote.communications.push({
-        type: "email",
-        content: "Quote confirmation email failed",
-        sentAt: new Date(),
-        successful: false,
-      });
-      await savedQuote.save();
+    } catch (adminError) {
+      console.error("Failed to send admin notification:", adminError);
+      // Don't fail the entire request if admin notification fails
     }
 
     return NextResponse.json({
       success: true,
-      quote: {
-        id: savedQuote.quoteId,
-        vehicleName: savedQuote.vehicleName,
-        offerAmount: savedQuote.pricing.finalPrice,
-        status: savedQuote.status,
-        expiresAt: savedQuote.expiresAt,
-      },
-      message: "Quote saved successfully",
+      quoteId,
+      accessToken,
+      message: "Quote submitted successfully",
     });
   } catch (error) {
-    console.error("❌ Quote creation error:", error);
+    console.error("Error creating quote:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Failed to create quote",
-      },
+      { error: "Failed to create quote" },
       { status: 500 }
     );
   }
 }
 
-// GET endpoint for retrieving quotes
 export async function GET(request) {
   try {
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
-    const quoteId = searchParams.get("id");
     const email = searchParams.get("email");
+    const quoteId = searchParams.get("quoteId");
 
-    if (quoteId) {
-      const quote = await Quote.findOne({ quoteId });
-      if (!quote) {
-        return NextResponse.json({ error: "Quote not found" }, { status: 404 });
-      }
-      return NextResponse.json({ success: true, quote });
+    if (!email && !quoteId) {
+      return NextResponse.json(
+        { error: "Email or Quote ID is required" },
+        { status: 400 }
+      );
     }
 
-    if (email) {
-      const quotes = await Quote.find({ "customer.email": email })
-        .sort({ createdAt: -1 })
-        .limit(10);
-      return NextResponse.json({ success: true, quotes });
-    }
+    let query = {};
+    if (email) query["customer.email"] = email;
+    if (quoteId) query.quoteId = quoteId;
 
-    return NextResponse.json(
-      { error: "Missing required parameters" },
-      { status: 400 }
-    );
+    const quotes = await Quote.find(query).sort({ createdAt: -1 }).limit(10);
+
+    return NextResponse.json({
+      success: true,
+      quotes: quotes.map((quote) => ({
+        quoteId: quote.quoteId,
+        vehicleName: quote.vehicleName,
+        vehicleDetails: quote.vehicleDetails,
+        pricing: quote.pricing,
+        status: quote.status,
+        createdAt: quote.createdAt,
+        expiresAt: quote.expiresAt,
+        accessToken: quote.accessToken,
+      })),
+    });
   } catch (error) {
-    console.error("❌ Quote retrieval error:", error);
+    console.error("Error fetching quotes:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to retrieve quote" },
+      { error: "Failed to fetch quotes" },
       { status: 500 }
     );
   }

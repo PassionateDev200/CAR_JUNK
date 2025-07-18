@@ -1,14 +1,16 @@
-/** route: src/components/ui/LoadingSpinner.jsx */
-import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export default function LoadingSpinner() {
+export function LoadingSpinner({ className, ...props }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="text-center">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading...</h2>
-        <p className="text-gray-600">Preparing your cash offer experience</p>
-      </div>
-    </div>
+    <div
+      className={cn(
+        "animate-spin rounded-full border-2 border-gray-300 border-t-blue-600",
+        className
+      )}
+      {...props}
+    />
   );
 }
+
+// Also export as default for flexibility
+export default LoadingSpinner;
