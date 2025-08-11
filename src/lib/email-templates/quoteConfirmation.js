@@ -1,4 +1,5 @@
 /**route: src/lib/email-templates/quoteConfirmation.js */
+
 // Generate HTML email template for quote confirmation with management link
 export const generateQuoteConfirmationHTML = ({
   customerName,
@@ -46,7 +47,10 @@ export const generateQuoteConfirmationHTML = ({
         .benefits ul { margin: 0; padding-left: 20px; }
         .benefits li { margin: 8px 0; }
         .manage-section { background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3B82F6; }
-        .access-token { background: #1f2937; color: #f9fafb; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 14px; margin: 10px 0; word-break: break-all; }
+        .access-token { background: #1f2937; color: #f9fafb; padding: 15px 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 24px; font-weight: bold; margin: 15px 0; text-align: center; letter-spacing: 3px; border: 2px solid #3B82F6; }
+        .token-highlight { background: #dbeafe; border: 2px solid #3B82F6; padding: 12px 16px; border-radius: 6px; display: inline-block; font-family: 'Courier New', monospace; font-size: 20px; font-weight: bold; letter-spacing: 2px; color: #1e40af; margin: 10px 0; }
+        .easy-access { background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 15px; margin: 20px 0; }
+        .quick-info { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; }
       </style>
     </head>
     <body>
@@ -63,7 +67,7 @@ export const generateQuoteConfirmationHTML = ({
               Valid until ${expirationDate}
             </p>
             <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 14px;">
-              Quote ID: ${quoteId}
+              Quote ID: <span class="token-highlight">${quoteId}</span>
             </p>
           </div>
 
@@ -111,13 +115,33 @@ export const generateQuoteConfirmationHTML = ({
           </div>
 
           <div class="manage-section">
-            <h3 style="margin-top: 0; color: #1f2937;">🔧 Manage Your Quote</h3>
-            <p style="margin: 10px 0; color: #374151;">
-              Use the link above or visit our quote management page with your access token:
+            <h3 style="margin-top: 0; color: #1f2937;">🔧 Easy Quote Management</h3>
+            <p style="margin: 10px 0; color: #374151; font-size: 16px;">
+              Your 6-character access token for quick and easy quote management:
             </p>
             <div class="access-token">${accessToken}</div>
-            <p style="margin: 10px 0; color: #6b7280; font-size: 14px;">
-              With this token, you can cancel your quote, reschedule pickup, or update your contact information anytime.
+            
+            <div class="easy-access">
+              <h4 style="margin: 0 0 10px 0; color: #065f46;">📱 Super Simple Access</h4>
+              <p style="margin: 0; color: #047857; font-size: 14px;">
+                Just 6 characters! Easy to type on any device, remember, or share over the phone.
+              </p>
+            </div>
+            
+            <p style="margin: 15px 0; color: #374151; font-size: 14px;">
+              <strong>With your access token, you can:</strong>
+            </p>
+            <ul style="margin: 10px 0; color: #374151; font-size: 14px; padding-left: 20px;">
+              <li>✅ Cancel your quote anytime</li>
+              <li>📅 Reschedule pickup if needed</li>
+              <li>📝 Update your contact information</li>
+              <li>📞 Get support with your quote reference</li>
+            </ul>
+          </div>
+
+          <div class="quick-info">
+            <p style="margin: 0; color: #92400e;">
+              <strong>⚡ Quick Access:</strong> Visit <strong>our website → Manage Quote</strong> and enter either your <strong>6-character access token</strong> or your <strong>email + Quote ID</strong>.
             </p>
           </div>
 
@@ -135,6 +159,9 @@ export const generateQuoteConfirmationHTML = ({
           <p style="font-size: 12px; margin-top: 20px;">
             This offer is valid for 7 days from the date of this email. 
             Vehicle condition will be verified during pickup.
+          </p>
+          <p style="font-size: 12px; margin-top: 10px; color: #9ca3af;">
+            Your access token: <strong>${accessToken}</strong> | Quote ID: <strong>${quoteId}</strong>
           </p>
         </div>
       </div>
@@ -167,46 +194,62 @@ export const generateQuoteConfirmationText = ({
   }/manage/${accessToken}`;
 
   return `
-Your Cash Offer is Ready!
+🚗 Your Cash Offer is Ready!
 
 Hi ${customerName},
 
 We've prepared your personalized offer for your ${vehicleName}.
 
-OFFER AMOUNT: $${pricing.finalPrice.toLocaleString()}
-Valid until: ${expirationDate}
-Quote ID: ${quoteId}
+💰 OFFER AMOUNT: $${pricing.finalPrice.toLocaleString()}
+📅 Valid until: ${expirationDate}
+🆔 Quote ID: ${quoteId}
 
-VEHICLE DETAILS:
+🚙 VEHICLE DETAILS:
 - Year: ${vehicleDetails.year}
 - Make: ${vehicleDetails.make}
 - Model: ${vehicleDetails.model}
 - Trim: ${vehicleDetails.trim || "Standard"}
 ${vin ? `- VIN: ${vin}` : ""}
 
-WHAT'S INCLUDED:
+✅ WHAT'S INCLUDED:
 ✓ Free vehicle pickup at your location
 ✓ All paperwork handled by our team
 ✓ Immediate payment upon pickup
 ✓ No hidden fees or charges
 
-MANAGE YOUR QUOTE:
-Visit: ${manageUrl}
-Access Token: ${accessToken}
+🔧 EASY QUOTE MANAGEMENT:
+📱 Your 6-Character Access Token: ${accessToken}
 
-With your access token, you can:
-- Cancel your quote anytime
-- Reschedule pickup if needed
-- Update your contact information
+🌐 Manage Your Quote: ${manageUrl}
 
-ACCEPT YOUR OFFER:
+⚡ SUPER SIMPLE ACCESS:
+Just 6 characters! Easy to type, remember, or share over the phone.
+
+📋 WITH YOUR ACCESS TOKEN, YOU CAN:
+- ✅ Cancel your quote anytime
+- 📅 Reschedule pickup if needed  
+- 📝 Update your contact information
+- 📞 Get support with your quote reference
+
+🚀 QUICK ACCESS OPTIONS:
+1. Visit our website → "Manage Quote" → Enter your 6-character access token: ${accessToken}
+2. OR use Email + Quote ID: ${customerName
+    .split(" ")[0]
+    .toLowerCase()}@[your-email] + ${quoteId}
+
+⏰ TIME SENSITIVE: This offer expires in 7 days.
 Click the link above to accept your offer and schedule pickup.
 
-This offer expires in 7 days.
+📞 QUESTIONS? 
+Reply to this email or call us at (971) 398-7852
 
-Questions? Reply to this email or call us at (971) 398-7852
-
-Best regards,
+---
 PNW Cash for Cars Team
+
+💡 Keep this email for your records!
+Access Token: ${accessToken} | Quote ID: ${quoteId}
+
+This offer is valid for 7 days from the date of this email. 
+Vehicle condition will be verified during pickup.
   `.trim();
 };

@@ -111,7 +111,7 @@ export default function DrivabilityQuestion({
                 <div className="font-medium text-gray-900">{option.label}</div>
                 <div className="text-sm text-gray-600 mt-1">
                   {option.description}
-                  {option.priceAdjustment && (
+                  {/* {option.priceAdjustment && (
                     <div
                       className={`text-xs mt-1 ${
                         option.priceAdjustment.amount === 0
@@ -121,7 +121,7 @@ export default function DrivabilityQuestion({
                     >
                       Price Impact: {option.impact}
                     </div>
-                  )}
+                  )} */}
                 </div>
               </div>
             </Label>

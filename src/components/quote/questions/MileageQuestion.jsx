@@ -324,9 +324,9 @@ export default function MileageQuestion({
             <div className={`text-sm font-medium ${mileageInfo.color} mb-1`}>
               {mileageInfo.text}
             </div>
-            <div className="text-xs text-gray-600">
+            {/* <div className="text-xs text-gray-600">
               Price Impact: {mileageInfo.impact}
-            </div>
+            </div> */}
           </div>
         )}
 

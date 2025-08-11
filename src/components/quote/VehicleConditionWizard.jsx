@@ -617,7 +617,7 @@ export default function VehicleConditionWizard({ onComplete }) {
       )}
 
       {/* UPDATED: Debug Info (Remove in production) */}
-      {process.env.NODE_ENV === "development" && (
+      {/* {process.env.NODE_ENV === "development" && (
         <Card className="bg-yellow-50 border-yellow-200">
           <CardContent className="p-4">
             <h4 className="text-sm font-bold text-yellow-800 mb-2">
@@ -652,7 +652,7 @@ export default function VehicleConditionWizard({ onComplete }) {
             </div>
           </CardContent>
         </Card>
-      )}
+      )} */}
 
       {/* Disqualification Modal */}
       <Dialog

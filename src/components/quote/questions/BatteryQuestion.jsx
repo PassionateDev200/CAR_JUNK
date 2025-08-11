@@ -122,12 +122,12 @@ export default function BatteryQuestion({
                 <div className="font-medium text-gray-900">{option.label}</div>
                 <div className="text-sm text-gray-600 mt-1">
                   {option.description}
-                  {option.priceAdjustment &&
+                  {/* {option.priceAdjustment &&
                     option.priceAdjustment.amount === 0 && (
                       <div className="text-xs text-green-600 mt-1">
                         Price Impact: No adjustment needed
                       </div>
-                    )}
+                    )} */}
                 </div>
               </div>
             </Label>

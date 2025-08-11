@@ -318,7 +318,7 @@ export default function QuoteWizard() {
                   </div>
 
                   {/* ORIGINAL TIPS SECTION */}
-                  <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                  {/* <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
                     <h4 className="text-sm font-medium text-blue-800 mb-2">
                       💡 Tips
                     </h4>
@@ -328,7 +328,7 @@ export default function QuoteWizard() {
                       <li>• You can go back to change any answer</li>
                       <li>• Free pickup included with every offer</li>
                     </ul>
-                  </div>
+                  </div> */}
                 </div>
                 {/* FLOATING RESET BUTTON */}
                 <ResetButton

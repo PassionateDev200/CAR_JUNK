@@ -1,20 +1,35 @@
 /** route: src/models/Quote.js */
 
 import mongoose from "mongoose";
-import { randomBytes } from "crypto";
+
+// ✅ Generate exactly 6 alphanumeric characters for Access Token
+function generateAccessToken() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// ✅ Generate exactly 6 alphanumeric characters for Quote ID
+function generateQuoteId() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
 
 const quoteSchema = new mongoose.Schema(
   {
-    // Quote Identification
+    // ✅ UPDATED: Quote Identification with 6-character generation
     quoteId: {
       type: String,
       required: true,
       unique: true,
-      default: () =>
-        `Q-${Date.now()}-${Math.random()
-          .toString(36)
-          .substr(2, 4)
-          .toUpperCase()}`,
+      default: generateQuoteId,
     },
 
     // Vehicle Information
@@ -146,7 +161,7 @@ const quoteSchema = new mongoose.Schema(
       mirrors_glass_lights_location: { type: [String], default: [] },
     },
 
-    // Quote Status - UPDATED with new statuses
+    // Quote Status - Enhanced with customer action statuses
     status: {
       type: String,
       enum: [
@@ -154,15 +169,15 @@ const quoteSchema = new mongoose.Schema(
         "accepted",
         "expired",
         "cancelled",
-        "customer_cancelled", // NEW: Customer initiated cancellation
-        "pickup_scheduled", // NEW: Pickup date/time confirmed
-        "rescheduled", // NEW: Customer rescheduled pickup
-        "completed", // NEW: Transaction completed
+        "customer_cancelled", // Customer initiated cancellation
+        "pickup_scheduled", // Pickup date/time confirmed
+        "rescheduled", // Customer rescheduled pickup
+        "completed", // Transaction completed
       ],
       default: "pending",
     },
 
-    // NEW: Customer Action Management
+    // ✅ ENHANCED: Customer Action Management
     customerActions: {
       // Permission flags
       canCancel: { type: Boolean, default: true },
@@ -205,13 +220,13 @@ const quoteSchema = new mongoose.Schema(
       rescheduleNote: { type: String, default: "" },
       rescheduledAt: { type: Date, default: null },
 
-      // Action history for audit trail
+      // ✅ FIXED: Action history for audit trail with "created" enum value
       actionHistory: [
         {
           action: {
             type: String,
             enum: [
-              "created",
+              "created", // ✅ Added to fix validation error
               "cancelled",
               "rescheduled",
               "modified",
@@ -231,7 +246,7 @@ const quoteSchema = new mongoose.Schema(
       ],
     },
 
-    // NEW: Pickup Details - Enhanced
+    // Enhanced Pickup Details
     pickupDetails: {
       scheduledDate: { type: Date, default: null },
       scheduledTime: { type: String, default: null },
@@ -276,11 +291,17 @@ const quoteSchema = new mongoose.Schema(
       },
     ],
 
-    // Customer access token for secure quote management
+    // ✅ UPDATED: Customer access token with 6-character generation
     accessToken: {
       type: String,
-      default: "",
-      unique: true,
+      default: generateAccessToken,
+      unique: true, // ✅ Only this index declaration needed (removed duplicate)
+    },
+
+    // ✅ NEW: Question pricing breakdown for transparency
+    questionPricing: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
   },
   {
@@ -288,17 +309,18 @@ const quoteSchema = new mongoose.Schema(
   }
 );
 
-// Enhanced Indexes
+// ✅ Enhanced Indexes (removed duplicate accessToken index)
 quoteSchema.index({ "customer.email": 1 });
 quoteSchema.index({ "customer.zipCode": 1 });
 quoteSchema.index({ status: 1 });
 quoteSchema.index({ createdAt: -1 });
 quoteSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-// quoteSchema.index({ accessToken: 1 }); // NEW: For secure quote access
-quoteSchema.index({ "customerActions.cancelledAt": 1 }); // NEW: For cancellation tracking
-quoteSchema.index({ "pickupDetails.scheduledDate": 1 }); // NEW: For pickup scheduling
+// Removed duplicate: quoteSchema.index({ accessToken: 1 }); // Already handled by unique: true
+quoteSchema.index({ "customerActions.cancelledAt": 1 }); // For cancellation tracking
+quoteSchema.index({ "pickupDetails.scheduledDate": 1 }); // For pickup scheduling
+quoteSchema.index({ "customerActions.actionHistory.timestamp": -1 }); // For activity feeds
 
-// NEW: Instance methods for customer actions
+// ✅ UPDATED: Enhanced instance methods for customer actions
 quoteSchema.methods.canCustomerCancel = function () {
   // Customers can cancel quotes unless they're already cancelled, expired, or completed
   const nonCancellableStatuses = [
@@ -313,9 +335,14 @@ quoteSchema.methods.canCustomerCancel = function () {
 };
 
 quoteSchema.methods.canCustomerReschedule = function () {
+  // Can reschedule if quote is accepted or pickup is scheduled and not expired
+  const reschedulableStatuses = ["accepted", "pickup_scheduled", "rescheduled"];
+  const isNotExpired = !this.expiresAt || new Date() <= this.expiresAt;
+
   return (
     this.customerActions.canReschedule &&
-    ["accepted", "pickup_scheduled"].includes(this.status)
+    reschedulableStatuses.includes(this.status) &&
+    isNotExpired
   );
 };
 
@@ -327,7 +354,57 @@ quoteSchema.methods.addActionHistory = function (action, details = {}) {
     customerInitiated: details.customerInitiated || false,
     adminUserId: details.adminUserId || null,
     details: details.additionalData || {},
+    timestamp: new Date(),
   });
 };
+
+// ✅ NEW: Helper method to check if quote is expired
+quoteSchema.methods.isExpired = function () {
+  return this.expiresAt && new Date() > this.expiresAt;
+};
+
+// ✅ NEW: Helper method to get quote age in days
+quoteSchema.methods.getAgeInDays = function () {
+  const now = new Date();
+  const created = new Date(this.createdAt);
+  const diffInMs = now - created;
+  return Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+};
+
+// ✅ NEW: Helper method to get remaining days until expiration
+quoteSchema.methods.getDaysUntilExpiration = function () {
+  if (!this.expiresAt) return null;
+  const now = new Date();
+  const expires = new Date(this.expiresAt);
+  const diffInMs = expires - now;
+  return Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+};
+
+// ✅ NEW: Static method to find quotes expiring soon
+quoteSchema.statics.findExpringSoon = function (days = 1) {
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() + days);
+
+  return this.find({
+    expiresAt: { $lte: cutoffDate },
+    status: {
+      $nin: ["expired", "completed", "cancelled", "customer_cancelled"],
+    },
+  });
+};
+
+// ✅ NEW: Pre-save middleware to ensure vehicleName is set
+quoteSchema.pre("save", function (next) {
+  if (
+    this.vehicleDetails &&
+    this.vehicleDetails.year &&
+    this.vehicleDetails.make &&
+    this.vehicleDetails.model
+  ) {
+    this.vehicleName =
+      `${this.vehicleDetails.year} ${this.vehicleDetails.make} ${this.vehicleDetails.model}`.trim();
+  }
+  next();
+});
 
 export default mongoose.models.Quote || mongoose.model("Quote", quoteSchema);

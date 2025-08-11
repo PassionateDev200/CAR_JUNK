@@ -110,11 +110,11 @@ export default function WheelsTiresQuestion({
                 <div className="font-medium text-gray-900">{option.label}</div>
                 <div className="text-sm text-gray-600 mt-1">
                   {option.description}
-                  {option.priceAdjustment && (
+                  {/* {option.priceAdjustment && (
                     <div className="text-xs text-blue-600 mt-1">
                       Price Impact: {option.impact}
                     </div>
-                  )}
+                  )} */}
                 </div>
               </div>
             </Label>

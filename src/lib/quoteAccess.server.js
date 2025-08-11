@@ -1,96 +1,19 @@
+/**
+ * Server-only Quote Access utilities
+ * This file can safely import Node.js modules like 'express-rate-limit'
+ * because it should **only** be used in API routes/middleware on the server.
+ */
+
 import rateLimit from "express-rate-limit";
 
-// ✅ UPDATED: Validate 6-character access token format
-export function validateAccessToken(token) {
-  // Check if token exists and has valid format
-  if (!token || typeof token !== "string") {
-    return false;
-  }
+// =====================
+// Rate-limiting configs
+// =====================
 
-  // ✅ UPDATED: Check length (should be 6 characters instead of 16)
-  if (token.length !== 6) {
-    return false;
-  }
-
-  // ✅ UPDATED: Check if token contains only valid characters (6 alphanumeric uppercase)
-  const validTokenPattern = /^[A-Z0-9]{6}$/;
-  return validTokenPattern.test(token);
-}
-
-// ✅ NEW: Validate Quote ID format (also 6 characters)
-export function validateQuoteId(quoteId) {
-  // Check if quoteId exists and has valid format
-  if (!quoteId || typeof quoteId !== "string") {
-    return false;
-  }
-
-  // Check length (should be 6 characters)
-  if (quoteId.length !== 6) {
-    return false;
-  }
-
-  // Check if quoteId contains only valid characters (6 alphanumeric uppercase)
-  const validQuoteIdPattern = /^[A-Z0-9]{6}$/;
-  return validQuoteIdPattern.test(quoteId);
-}
-
-// ✅ NEW: Normalize token input (convert to uppercase, trim whitespace)
-export function normalizeToken(token) {
-  if (!token || typeof token !== "string") {
-    return "";
-  }
-
-  return token.trim().toUpperCase();
-}
-
-// ✅ NEW: Validate and normalize access token
-export function validateAndNormalizeAccessToken(token) {
-  const normalizedToken = normalizeToken(token);
-
-  return {
-    isValid: validateAccessToken(normalizedToken),
-    normalizedToken: normalizedToken,
-    errors: getTokenValidationErrors(normalizedToken),
-  };
-}
-
-// ✅ NEW: Get detailed validation errors for better user feedback
-export function getTokenValidationErrors(token) {
-  const errors = [];
-
-  if (!token || typeof token !== "string") {
-    errors.push("Access token is required");
-    return errors;
-  }
-
-  if (token.length === 0) {
-    errors.push("Access token cannot be empty");
-  } else if (token.length < 6) {
-    errors.push(
-      `Access token is too short (${token.length} characters, needs 6)`
-    );
-  } else if (token.length > 6) {
-    errors.push(
-      `Access token is too long (${token.length} characters, needs 6)`
-    );
-  }
-
-  const invalidChars = token.match(/[^A-Z0-9]/g);
-  if (invalidChars) {
-    errors.push(
-      `Invalid characters found: ${[...new Set(invalidChars)].join(
-        ", "
-      )}. Only letters A-Z and numbers 0-9 are allowed.`
-    );
-  }
-
-  return errors;
-}
-
-// Rate limiting for customer actions
+// Limit customer actions (cancel/reschedule/update) to prevent abuse
 export const customerActionLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per windowMs
+  max: 10, // limit each IP to 10 actions per window
   message: {
     error: "Too many requests from this IP, please try again later.",
   },
@@ -98,10 +21,10 @@ export const customerActionLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Rate limiting for quote access
+// Limit GET/manage quote requests
 export const quoteAccessLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // Limit each IP to 30 requests per windowMs
+  max: 30, // limit each IP to 30 lookups per window
   message: {
     error: "Too many quote access requests, please try again later.",
   },
@@ -109,10 +32,10 @@ export const quoteAccessLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// ✅ ENHANCED: Rate limiting for token validation attempts
+// Limit token validation attempts
 export const tokenValidationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Allow more validation attempts since tokens are shorter
+  max: 50, // allow more since it's simple validation
   message: {
     error: "Too many token validation attempts, please try again later.",
   },
@@ -120,7 +43,11 @@ export const tokenValidationLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Validate customer action permissions
+// =====================
+// Server-side validators
+// =====================
+
+// Validate customer action against current quote state
 export function validateActionPermissions(quote, action) {
   if (!quote || !action) {
     return { valid: false, error: "Invalid quote or action" };
@@ -161,35 +88,28 @@ export function validateActionPermissions(quote, action) {
   return { valid: true };
 }
 
-// ✅ ENHANCED: Input sanitization helpers with better security
+// Sanitize arbitrary input strings
 export function sanitizeInput(input) {
-  if (typeof input !== "string") {
-    return input;
-  }
+  if (typeof input !== "string") return input;
 
-  // Remove potentially dangerous characters and normalize
   return input
-    .replace(/[<>]/g, "") // Remove HTML tags
-    .replace(/javascript:/gi, "") // Remove javascript: protocol
-    .replace(/on\w+=/gi, "") // Remove event handlers
-    .replace(/[\x00-\x1f\x7f]/g, "") // Remove control characters
+    .replace(/[<>]/g, "")
+    .replace(/javascript:/gi, "")
+    .replace(/on\w+=/gi, "")
+    .replace(/[\x00-\x1f\x7f]/g, "")
     .trim();
 }
 
-// ✅ NEW: Sanitize access token input specifically
+// Sanitize access token specifically
 export function sanitizeAccessToken(token) {
-  if (!token || typeof token !== "string") {
-    return "";
-  }
-
-  // Remove any non-alphanumeric characters and convert to uppercase
+  if (!token || typeof token !== "string") return "";
   return token
     .replace(/[^a-zA-Z0-9]/g, "")
     .toUpperCase()
-    .substring(0, 6); // Ensure max 6 characters
+    .substring(0, 6);
 }
 
-// Validate cancellation reason
+// Validate cancellation reason against allowed set
 export function validateCancellationReason(reason) {
   const validReasons = [
     "changed_mind",
@@ -200,11 +120,10 @@ export function validateCancellationReason(reason) {
     "timing_issues",
     "other",
   ];
-
   return validReasons.includes(reason);
 }
 
-// Validate reschedule reason
+// Validate reschedule reason against allowed set
 export function validateRescheduleReason(reason) {
   const validReasons = [
     "schedule_conflict",
@@ -214,11 +133,10 @@ export function validateRescheduleReason(reason) {
     "vehicle_accessibility",
     "other",
   ];
-
   return validReasons.includes(reason);
 }
 
-// ✅ NEW: Comprehensive validation for customer contact info updates
+// Validate and sanitize contact info updates server-side
 export function validateContactUpdate(updates) {
   const errors = [];
   const sanitized = {};
@@ -245,7 +163,7 @@ export function validateContactUpdate(updates) {
   }
 
   if (updates.phone) {
-    const phone = sanitizeInput(updates.phone).replace(/\D/g, ""); // Keep only digits
+    const phone = sanitizeInput(updates.phone).replace(/\D/g, "");
     if (phone.length < 10) {
       errors.push("Phone number must be at least 10 digits");
     } else if (phone.length > 15) {
@@ -264,14 +182,10 @@ export function validateContactUpdate(updates) {
     }
   }
 
-  return {
-    isValid: errors.length === 0,
-    errors,
-    sanitized,
-  };
+  return { isValid: errors.length === 0, errors, sanitized };
 }
 
-// ✅ NEW: Validate pickup schedule data
+// Validate pickup schedule details server-side
 export function validatePickupSchedule(scheduleData) {
   const errors = [];
 
@@ -286,7 +200,6 @@ export function validatePickupSchedule(scheduleData) {
       errors.push("Pickup date cannot be in the past");
     }
 
-    // Check if date is within reasonable future (e.g., 30 days)
     const maxDate = new Date();
     maxDate.setDate(maxDate.getDate() + 30);
     if (pickupDate > maxDate) {
@@ -313,17 +226,12 @@ export function validatePickupSchedule(scheduleData) {
     errors.push("Special instructions must be less than 500 characters");
   }
 
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
+  return { isValid: errors.length === 0, errors };
 }
 
-// ✅ NEW: Security helper to check for suspicious patterns
+// Simple check for suspicious payloads
 export function detectSuspiciousActivity(input) {
-  if (!input || typeof input !== "string") {
-    return false;
-  }
+  if (!input || typeof input !== "string") return false;
 
   const suspiciousPatterns = [
     /script/gi,
@@ -342,7 +250,7 @@ export function detectSuspiciousActivity(input) {
   return suspiciousPatterns.some((pattern) => pattern.test(input));
 }
 
-// ✅ NEW: Export validation constants for consistency
+// Central constants for validation/sanitization
 export const VALIDATION_CONSTANTS = {
   ACCESS_TOKEN_LENGTH: 6,
   QUOTE_ID_LENGTH: 6,
