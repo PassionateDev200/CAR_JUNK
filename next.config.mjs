@@ -8,24 +8,24 @@ const nextConfig = {
         port: "",
         pathname: "/photos/**",
       },
-    ],
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+        port: "",
+        pathname: "/**",
+      },
+    ]
   },
   // i18n: {
   //   locales: ["en", "pl"],
   //   defaultLocale: "en",
   // },
-  images: {
-    domains: ["firebasestorage.googleapis.com"],
-  },
   env: {
     MARKETCHECK_API_KEY: process.env.MARKETCHECK_API_KEY,
   },
   eslint: {
     ignoreDuringBuilds: true,
-  },
-  experimental: {
-    missingSuspenseWithCSRBailout: false,
-  },
+  }
 };
 
 export default nextConfig;

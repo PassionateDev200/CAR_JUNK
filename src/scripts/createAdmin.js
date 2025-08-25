@@ -119,7 +119,7 @@ async function createDefaultAdmin() {
       console.log("⚠️  Default admin already exists");
       console.log("📧 Email: admin@pnwcashforcars.com");
       console.log("🔑 Use existing password or reset if needed");
-      console.log("🌐 Login at: http://localhost:3000/admin/login");
+      console.log("🌐 Login at: http://107.172.232.68:3000/admin/login");
       return;
     }
 
@@ -140,7 +140,7 @@ async function createDefaultAdmin() {
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log("📧 Email: admin@pnwcashforcars.com");
     console.log("🔑 Password: TempPassword123!");
-    console.log("🌐 Login URL: http://localhost:3000/admin/login");
+    console.log("🌐 Login URL: http://107.172.232.68:3000/admin/login");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log("⚠️  Please change the default password after first login!");
   } catch (error) {

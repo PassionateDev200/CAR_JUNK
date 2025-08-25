@@ -100,7 +100,7 @@ export const generateCancellationConfirmationHTML = ({
             </p>
             <div style="text-align: center;">
               <a href="${
-                process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+                process.env.NEXT_PUBLIC_BASE_URL || "http://107.172.232.68:3000"
               }/quote" class="cta-button">
                 Get New Quote →
               </a>
@@ -178,7 +178,7 @@ If you decide to sell your vehicle in the future, we'd love to help you again.
 Getting a new quote is quick and easy!
 
 Get a new quote: ${
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+    process.env.NEXT_PUBLIC_BASE_URL || "http://107.172.232.68:3000"
   }/quote
 
 We're always looking to improve our service. If you have any feedback about your experience, we'd love to hear from you.

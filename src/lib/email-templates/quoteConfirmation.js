@@ -20,7 +20,7 @@ export const generateQuoteConfirmationHTML = ({
   });
 
   const manageUrl = `${
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+    process.env.NEXT_PUBLIC_BASE_URL || "http://107.172.232.68:3000"
   }/manage/${accessToken}`;
 
   return `
@@ -190,7 +190,7 @@ export const generateQuoteConfirmationText = ({
   });
 
   const manageUrl = `${
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+    process.env.NEXT_PUBLIC_BASE_URL || "http://107.172.232.68:3000"
   }/manage/${accessToken}`;
 
   return `
