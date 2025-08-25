@@ -1,6 +1,0 @@
-2025-08-15 10:53:38 - Starting C:\Program Files\nodejs\node.exe  --harmony C:\carjunk\CAR_JUNK\node_modules\node-windows\lib\wrapper.js --file C:\carjunk\CAR_JUNK\server.js --scriptoptions= --log "carjunk wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
-2025-08-15 10:53:38 - Started 9888
-2025-08-15 17:46:36 - Starting C:\Program Files\nodejs\node.exe  --harmony C:\carjunk\CAR_JUNK\node_modules\node-windows\lib\wrapper.js --file C:\carjunk\CAR_JUNK\server.js --scriptoptions= --log "carjunk wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
-2025-08-15 17:46:36 - Started 10208
-2025-08-18 10:05:07 - Starting C:\Program Files\nodejs\node.exe  --harmony C:\carjunk\CAR_JUNK\node_modules\node-windows\lib\wrapper.js --file C:\carjunk\CAR_JUNK\server.js --scriptoptions= --log "carjunk wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
-2025-08-18 10:05:07 - Started 3724
