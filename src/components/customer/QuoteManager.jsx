@@ -1,4 +1,3 @@
-/** route: src/components/customer/QuoteManager.jsx */
 "use client";
 
 import { useState } from "react";
@@ -25,12 +24,14 @@ import {
 
 import CancelDialog from "./CancelDialog";
 import RescheduleDialog from "./RescheduleDialog";
+import ScheduleDialog from "./ScheduleDialog"; // ✅ NEW: Import ScheduleDialog
 import UpdateInfoDialog from "./UpdateInfoDialog";
 import ActionHistory from "./ActionHistory";
 
 export default function QuoteManager({ quote, onQuoteUpdate }) {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false); // ✅ NEW: Schedule dialog state
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -53,16 +54,17 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
   };
 
   const handleActionComplete = (updatedQuote) => {
+    console.log("handleActionComplete ===> ", updatedQuote);
     onQuoteUpdate(updatedQuote);
     setActionLoading(false);
     setShowCancelDialog(false);
     setShowRescheduleDialog(false);
+    setShowScheduleDialog(false); // ✅ NEW: Close schedule dialog
     setShowUpdateDialog(false);
   };
 
   // ✅ FIXED: More robust logic for determining if quote can be cancelled
   const canCancelQuote = () => {
-    // Quote can be cancelled if it's not already cancelled, expired, or completed
     const nonCancellableStatuses = [
       "customer_cancelled",
       "cancelled",
@@ -76,7 +78,6 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
 
   // ✅ FIXED: More robust logic for determining if pickup can be rescheduled
   const canRescheduleQuote = () => {
-    // Can reschedule if quote is accepted or pickup is scheduled
     const reschedulableStatuses = [
       "accepted",
       "pickup_scheduled",
@@ -85,6 +86,19 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
     const isNotExpired = !isExpired;
 
     return reschedulableStatuses.includes(quote.status) && isNotExpired;
+  };
+
+  // ✅ NEW: Logic for determining if pickup can be scheduled
+  const canSchedulePickup = () => {
+    const schedulableStatuses = ["accepted"]; // Only accepted quotes can be scheduled
+    const isNotExpired = !isExpired;
+    const hasNoScheduledPickup = !quote.pickupDetails?.scheduledDate;
+
+    return (
+      schedulableStatuses.includes(quote.status) &&
+      isNotExpired &&
+      hasNoScheduledPickup
+    );
   };
 
   const isExpired = new Date() > new Date(quote.expiresAt);
@@ -214,12 +228,22 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
                     </p>
                   </div>
                 )}
+                {quote.pickupDetails.specialInstructions && (
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-gray-600">
+                      Special Instructions
+                    </p>
+                    <p className="font-medium">
+                      {quote.pickupDetails.specialInstructions}
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         )}
 
-      {/* Action Buttons - FIXED LOGIC */}
+      {/* Action Buttons */}
       <Card>
         <CardHeader>
           <CardTitle>Available Actions</CardTitle>
@@ -238,8 +262,21 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
               </Button>
             )}
 
+            {/* ✅ NEW: Schedule Pickup Button */}
+            {/* {canSchedulePickup() && ( */}
+            <Button
+              variant="default"
+              onClick={() => setShowScheduleDialog(true)}
+              disabled={actionLoading}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Schedule Pickup
+            </Button>
+            {/* )} */}
+
             {/* ✅ FIXED: Use local logic instead of quote.canReschedule */}
-            {canRescheduleQuote() && (
+            {/* {canRescheduleQuote() && (
               <Button
                 variant="outline"
                 onClick={() => setShowRescheduleDialog(true)}
@@ -248,16 +285,18 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Reschedule Pickup
               </Button>
-            )}
+            )} */}
 
-            {/* ✅ FIXED: Updated condition to use local logic */}
-            {!canCancelQuote() && !canRescheduleQuote() && (
-              <Alert className="border-gray-200 bg-gray-50">
-                <AlertDescription className="text-gray-700">
-                  No actions available for this quote in its current status.
-                </AlertDescription>
-              </Alert>
-            )}
+            {/* ✅ UPDATED: Updated condition to include schedule check */}
+            {!canCancelQuote() &&
+              !canRescheduleQuote() &&
+              !canSchedulePickup() && (
+                <Alert className="border-gray-200 bg-gray-50">
+                  <AlertDescription className="text-gray-700">
+                    No actions available for this quote in its current status.
+                  </AlertDescription>
+                </Alert>
+              )}
           </div>
         </CardContent>
       </Card>
@@ -269,6 +308,16 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
       <CancelDialog
         open={showCancelDialog}
         onOpenChange={setShowCancelDialog}
+        quote={quote}
+        onActionComplete={handleActionComplete}
+        loading={actionLoading}
+        setLoading={setActionLoading}
+      />
+
+      {/* ✅ NEW: Schedule Dialog */}
+      <ScheduleDialog
+        open={showScheduleDialog}
+        onOpenChange={setShowScheduleDialog}
         quote={quote}
         onActionComplete={handleActionComplete}
         loading={actionLoading}

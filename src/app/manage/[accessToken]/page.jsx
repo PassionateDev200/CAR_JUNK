@@ -53,6 +53,7 @@ export default function QuoteManagementPage({ params }) {
 
         if (result.success) {
           setQuote(result.data.quote);
+          console.log("result.success ===> ", result.data.quote);
         } else {
           setError(result.error);
         }

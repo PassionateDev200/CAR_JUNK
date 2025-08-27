@@ -19,9 +19,7 @@ export const generateQuoteConfirmationHTML = ({
     day: "numeric",
   });
 
-  const manageUrl = `${
-    process.env.NEXT_PUBLIC_BASE_URL || "http://107.172.232.68:3000"
-  }/manage/${accessToken}`;
+  const manageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/manage/${accessToken}`;
 
   return `
     <!DOCTYPE html>
@@ -189,9 +187,7 @@ export const generateQuoteConfirmationText = ({
     day: "numeric",
   });
 
-  const manageUrl = `${
-    process.env.NEXT_PUBLIC_BASE_URL || "http://107.172.232.68:3000"
-  }/manage/${accessToken}`;
+  const manageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/manage/${accessToken}`;
 
   return `
 🚗 Your Cash Offer is Ready!
