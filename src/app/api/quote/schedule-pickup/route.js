@@ -35,6 +35,7 @@ export async function POST(request) {
     if (!quote) {
       return NextResponse.json({ error: "Quote not found" }, { status: 404 });
     }
+
     // Check if quote is in valid state for scheduling
     const validStatuses = ["pending", "accepted"];
     // if (!validStatuses.includes(quote.status)) {
@@ -43,7 +44,7 @@ export async function POST(request) {
     //     { status: 400 }
     //   );
     // }
-    // Validate scheduled date is not in the past
+  
     const selectedDate = new Date(scheduledDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -108,7 +109,6 @@ export async function POST(request) {
       );
     } catch (emailError) {
       console.error("Failed to send pickup notification email:", emailError);
-      // Don't fail the request if email fails, but log it
     }
     return NextResponse.json({
       success: true,
