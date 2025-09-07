@@ -1,4 +1,5 @@
 /** route: src/app/manage/[accessToken]/page.jsx */
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,8 +7,6 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft,
   Car,
@@ -53,6 +52,7 @@ export default function QuoteManagementPage({ params }) {
 
         if (result.success) {
           setQuote(result.data.quote);
+          console.log("result.success ===> ", result.data.quote);
         } else {
           setError(result.error);
         }

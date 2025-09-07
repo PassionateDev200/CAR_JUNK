@@ -158,21 +158,6 @@ export default function UpdateInfoDialog({
             />
           </div>
 
-          {/* Address Field */}
-          <div>
-            <Label htmlFor="address" className="flex items-center gap-2 mb-2">
-              <MapPin className="h-4 w-4" />
-              Address (Optional)
-            </Label>
-            <Input
-              id="address"
-              type="text"
-              placeholder="Enter your address"
-              value={formData.address}
-              onChange={(e) => handleInputChange("address", e.target.value)}
-            />
-          </div>
-
           {error && (
             <Alert className="border-red-200 bg-red-50">
               <AlertDescription className="text-red-700">

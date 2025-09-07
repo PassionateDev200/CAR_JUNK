@@ -183,7 +183,7 @@ export const sendAdminNotificationEmail = async ({
   try {
     const adminEmails = [
       "admin@pnwcashforcars.com",
-      "pandaos240822@gmail.com", // Your test email
+      "service@regaltowing.net", // Your test email
     ];
 
     const mailOptions = {
