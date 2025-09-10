@@ -62,6 +62,20 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+    // Check if there's already a scheduled pickup
+    const hasExistingSchedule = quote.pickupDetails && quote.pickupDetails.scheduledDate;
+    const isUpdatingSchedule = hasExistingSchedule && quote.status === "pickup_scheduled";
+    
+    // Store original schedule details if updating
+    let originalScheduleDetails = null;
+    if (isUpdatingSchedule) {
+      originalScheduleDetails = {
+        originalDate: quote.pickupDetails.scheduledDate,
+        originalTime: quote.pickupDetails.scheduledTime,
+        originalTimeSlot: quote.pickupDetails.timeSlot,
+      };
+    }
+
     // Update quote with pickup details
     quote.pickupDetails = {
       scheduledDate: new Date(scheduledDate),
@@ -73,22 +87,44 @@ export async function POST(request) {
       confirmedAt: new Date(),
       completedAt: null,
     };
+    
     // Update quote status
     quote.status = "pickup_scheduled";
-    // Add action to history
-    quote.customerActions.actionHistory.push({
-      action: "pickup_scheduled",
-      reason: "customer_scheduled_pickup",
-      note: `Pickup scheduled for ${scheduledDate} at ${scheduledTime}`,
-      timestamp: new Date(),
-      customerInitiated: true,
-      details: {
-        scheduledDate,
-        scheduledTime,
-        timeSlot,
-        specialInstructions,
-      },
-    });
+    
+    // Add appropriate action to history
+    if (isUpdatingSchedule) {
+      // Update existing schedule - add reschedule entry
+      quote.customerActions.actionHistory.push({
+        action: "rescheduled",
+        reason: "customer_rescheduled_pickup",
+        note: `Pickup rescheduled from ${originalScheduleDetails.originalDate.toISOString().split('T')[0]} at ${originalScheduleDetails.originalTime} to ${scheduledDate} at ${scheduledTime}`,
+        timestamp: new Date(),
+        customerInitiated: true,
+        details: {
+          originalDate: originalScheduleDetails.originalDate,
+          originalTime: originalScheduleDetails.originalTime,
+          newDate: scheduledDate,
+          newTime: scheduledTime,
+          timeSlot,
+          specialInstructions,
+        },
+      });
+    } else {
+      // First time scheduling - add initial schedule entry
+      quote.customerActions.actionHistory.push({
+        action: "pickup_scheduled",
+        reason: "customer_scheduled_pickup",
+        note: `Pickup scheduled for ${scheduledDate} at ${scheduledTime}`,
+        timestamp: new Date(),
+        customerInitiated: true,
+        details: {
+          scheduledDate,
+          scheduledTime,
+          timeSlot,
+          specialInstructions,
+        },
+      });
+    }
     // Save the updated quote
     await quote.save();
     // Send admin notification email
@@ -101,10 +137,12 @@ export async function POST(request) {
         specialInstructions,
         contactPhone,
         pickupAddress,
-        adminEmail: process.env.ADMIN_EMAIL
+        adminEmail: process.env.ADMIN_EMAIL,
+        isReschedule: isUpdatingSchedule,
+        originalSchedule: originalScheduleDetails
       });
       console.log(
-        `📧 Pickup notification sent to admin for quote ${quote.quoteId}`
+        `📧 ${isUpdatingSchedule ? 'Reschedule' : 'Pickup'} notification sent to admin for quote ${quote.quoteId}`
       );
     } catch (emailError) {
       console.error("Failed to send pickup notification email:", emailError);
@@ -115,7 +153,7 @@ export async function POST(request) {
     
     return NextResponse.json({
       success: true,
-      message: "Pickup scheduled successfully",
+      message: isUpdatingSchedule ? "Pickup rescheduled successfully" : "Pickup scheduled successfully",
       quote: updatedQuote, // Return the complete updated quote
       pickupDetails: {
         scheduledDate,
@@ -124,6 +162,7 @@ export async function POST(request) {
         address: pickupAddress,
         contactPhone,
       },
+      isReschedule: isUpdatingSchedule,
     });
   } catch (error) {
     console.error("Pickup scheduling error:", error);

@@ -31,6 +31,9 @@ export default function ScheduleDialog({
   loading,
   setLoading,
 }) {
+  // Check if there's already a scheduled pickup
+  const hasExistingSchedule = quote?.pickupDetails?.scheduledDate;
+  const isRescheduling = hasExistingSchedule && quote?.status === "pickup_scheduled";
   const [formData, setFormData] = useState({
     scheduledDate: "",
     scheduledTime: "",
@@ -97,6 +100,14 @@ export default function ScheduleDialog({
         if (onActionComplete && response.data.quote) {
           onActionComplete(response.data.quote);
         }
+        
+        // Show success message based on whether it's a reschedule or new schedule
+        if (response.data.isReschedule) {
+          console.log("✅ Pickup rescheduled successfully");
+        } else {
+          console.log("✅ Pickup scheduled successfully");
+        }
+        
         onOpenChange(false); // close modal first
       } else {
         setError(response.data.error || "Failed to schedule pickup.");
@@ -140,7 +151,7 @@ export default function ScheduleDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-blue-600" />
-            Schedule Pickup
+            {isRescheduling ? "Reschedule Pickup" : "Schedule Pickup"}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -283,12 +294,12 @@ export default function ScheduleDialog({
               {loading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Scheduling...
+                  {isRescheduling ? "Rescheduling..." : "Scheduling..."}
                 </div>
               ) : (
                 <>
                   <Calendar className="h-4 w-4 mr-2" />
-                  Schedule Pickup
+                  {isRescheduling ? "Reschedule Pickup" : "Schedule Pickup"}
                 </>
               )}
             </Button>

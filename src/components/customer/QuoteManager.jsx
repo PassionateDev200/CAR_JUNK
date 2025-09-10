@@ -259,7 +259,7 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
               </Button>
             )}
 
-            {/* ✅ NEW: Schedule Pickup Button */}
+            {/* ✅ NEW: Schedule/Reschedule Pickup Button */}
             {/* {canSchedulePickup() && ( */}
             <Button
               variant="default"
@@ -268,7 +268,7 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               <Calendar className="h-4 w-4 mr-2" />
-              Schedule Pickup
+              {quote.pickupDetails?.scheduledDate ? "Reschedule Pickup" : "Schedule Pickup"}
             </Button>
             {/* )} */}
 
