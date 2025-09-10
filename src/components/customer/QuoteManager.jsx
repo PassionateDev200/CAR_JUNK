@@ -51,6 +51,7 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
 
   const handleActionComplete = (updatedQuote) => {
     console.log("handleActionComplete ===> ", updatedQuote);
+    // Update the quote state with the new data from the API
     onQuoteUpdate(updatedQuote);
     setActionLoading(false);
     setShowCancelDialog(false);

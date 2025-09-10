@@ -110,9 +110,13 @@ export async function POST(request) {
       console.error("Failed to send pickup notification email:", emailError);
       // Don't fail the request if email fails, but log it
     }
+    // Fetch the updated quote to return complete data
+    const updatedQuote = await Quote.findOne({ accessToken });
+    
     return NextResponse.json({
       success: true,
       message: "Pickup scheduled successfully",
+      quote: updatedQuote, // Return the complete updated quote
       pickupDetails: {
         scheduledDate,
         scheduledTime,

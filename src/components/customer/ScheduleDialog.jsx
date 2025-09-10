@@ -93,8 +93,10 @@ export default function ScheduleDialog({
       });
 
       if (response.data.success) {
-        // Optionally reload quote data on action complete
-        if (onActionComplete) onActionComplete(quote);
+        // Pass the updated quote data to parent component
+        if (onActionComplete && response.data.quote) {
+          onActionComplete(response.data.quote);
+        }
         onOpenChange(false); // close modal first
       } else {
         setError(response.data.error || "Failed to schedule pickup.");
