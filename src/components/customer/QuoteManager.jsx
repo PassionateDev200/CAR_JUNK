@@ -1,12 +1,11 @@
+/** route:  src/components/customer/QuoteManager.jsx*/
+
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import {
   Car,
   Calendar,
@@ -14,12 +13,9 @@ import {
   Phone,
   Mail,
   MapPin,
-  Clock,
-  CheckCircle,
   XCircle,
   Edit,
   Ban,
-  RotateCcw,
 } from "lucide-react";
 
 import CancelDialog from "./CancelDialog";

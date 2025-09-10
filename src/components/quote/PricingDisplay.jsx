@@ -372,7 +372,7 @@ export default function PricingDisplay() {
                   />
                 </div>
 
-                <div>
+                {/* <div>
                   <Label htmlFor="address" className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
                     Address (Optional)
@@ -386,7 +386,7 @@ export default function PricingDisplay() {
                       handleInputChange("address", e.target.value)
                     }
                   />
-                </div>
+                </div> */}
               </div>
 
               {submissionError && (

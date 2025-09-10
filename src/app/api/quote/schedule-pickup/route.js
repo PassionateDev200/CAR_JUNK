@@ -101,7 +101,7 @@ export async function POST(request) {
         specialInstructions,
         contactPhone,
         pickupAddress,
-        adminEmail: "pandaos240822@gmail.com",
+        adminEmail: process.env.ADMIN_EMAIL
       });
       console.log(
         `📧 Pickup notification sent to admin for quote ${quote.quoteId}`
