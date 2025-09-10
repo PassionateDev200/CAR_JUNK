@@ -43,13 +43,30 @@ export async function GET() {
           },
         },
       ]),
+
+      // Status counts
+      Quote.aggregate([
+        {
+          $group: {
+            _id: "$status",
+            count: { $sum: 1 },
+          },
+        },
+      ]),
     ]);
+
+    // Format status counts
+    const statusCounts = {};
+    stats[4].forEach((item) => {
+      statusCounts[item._id] = item.count;
+    });
 
     return NextResponse.json({
       totalQuotes: stats[0],
       activeCustomers: stats[1],
       scheduledPickups: stats[2],
       monthlyRevenue: stats[3][0]?.total || 0,
+      statusCounts,
     });
   } catch (error) {
     console.error("Dashboard stats error:", error);

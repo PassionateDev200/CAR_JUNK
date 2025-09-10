@@ -25,7 +25,7 @@ export async function GET(request) {
       .limit(limit)
       .skip((page - 1) * limit)
       .select(
-        "quoteId vehicleName customer pricing status createdAt expiresAt pickupDetails customerActions"
+        "quoteId vehicleName customer pricing status createdAt expiresAt pickupDetails customerActions accessToken vehicleDetails vin"
       );
 
     const totalQuotes = await Quote.countDocuments(query);

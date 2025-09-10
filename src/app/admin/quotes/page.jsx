@@ -18,14 +18,30 @@ import {
   DollarSign,
   Clock,
   User,
+  CheckCircle,
+  XCircle,
+  RotateCcw,
+  Ban,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  RefreshCw,
 } from "lucide-react";
 import axios from "axios";
+import QuoteDetailsModal from "@/components/admin/QuoteDetailsModal";
 
 export default function QuotesPage() {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedQuote, setSelectedQuote] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchQuotes();
@@ -33,13 +49,43 @@ export default function QuotesPage() {
 
   const fetchQuotes = async () => {
     try {
+      setRefreshing(true);
       const response = await axios.get("/api/admin/quotes");
       setQuotes(response.data.quotes || []);
     } catch (error) {
       console.error("Failed to fetch quotes:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleViewDetails = (quote) => {
+    setSelectedQuote(quote);
+    setShowDetailsModal(true);
+  };
+
+  const handleApproveQuote = async (quoteId) => {
+    try {
+      const response = await axios.post("/api/admin/quotes/approve", {
+        quoteId: quoteId,
+      });
+
+      if (response.data.success) {
+        // Refresh the quotes list
+        fetchQuotes();
+        console.log("Quote approved successfully");
+      } else {
+        console.error("Failed to approve quote:", response.data.error);
+      }
+    } catch (error) {
+      console.error("Failed to approve quote:", error);
+    }
+  };
+
+  const handleSchedulePickup = (quote) => {
+    // Navigate to pickup scheduling or open modal
+    window.open(`/manage/${quote.accessToken}`, '_blank');
   };
 
   const getStatusColor = (status) => {
@@ -55,17 +101,56 @@ export default function QuotesPage() {
     return colors[status] || "bg-gray-100 text-gray-800";
   };
 
-  const filteredQuotes = quotes.filter((quote) => {
-    const matchesSearch =
-      quote.vehicleName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quote.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quote.quoteId.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredAndSortedQuotes = quotes
+    .filter((quote) => {
+      const matchesSearch =
+        quote.vehicleName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        quote.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        quote.quoteId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        quote.customer.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === "all" || quote.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" || quote.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortBy) {
+        case "createdAt":
+          aValue = new Date(a.createdAt);
+          bValue = new Date(b.createdAt);
+          break;
+        case "finalPrice":
+          aValue = a.pricing?.finalPrice || 0;
+          bValue = b.pricing?.finalPrice || 0;
+          break;
+        case "customerName":
+          aValue = a.customer.name.toLowerCase();
+          bValue = b.customer.name.toLowerCase();
+          break;
+        case "vehicleName":
+          aValue = a.vehicleName.toLowerCase();
+          bValue = b.vehicleName.toLowerCase();
+          break;
+        default:
+          aValue = new Date(a.createdAt);
+          bValue = new Date(b.createdAt);
+      }
+
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredAndSortedQuotes.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedQuotes = filteredAndSortedQuotes.slice(startIndex, endIndex);
 
   if (loading) {
     return (
@@ -84,17 +169,34 @@ export default function QuotesPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold text-gray-900">Quote Management</h1>
-        <p className="text-gray-600 mt-1">
-          Manage customer quotes and track their status
-        </p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Quote Management</h1>
+          <p className="text-gray-600 mt-1">
+            Manage customer quotes and track their status
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">
+            {filteredAndSortedQuotes.length} quotes found
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchQuotes}
+            disabled={refreshing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
       </header>
 
       {/* Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -106,7 +208,7 @@ export default function QuotesPage() {
                 />
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -121,6 +223,24 @@ export default function QuotesPage() {
                 <option value="completed">Completed</option>
                 <option value="expired">Expired</option>
               </select>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+              >
+                <option value="createdAt">Sort by Date</option>
+                <option value="finalPrice">Sort by Price</option>
+                <option value="customerName">Sort by Customer</option>
+                <option value="vehicleName">Sort by Vehicle</option>
+              </select>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+              >
+                <option value="desc">Newest First</option>
+                <option value="asc">Oldest First</option>
+              </select>
             </div>
           </div>
         </CardContent>
@@ -128,7 +248,7 @@ export default function QuotesPage() {
 
       {/* Quotes List */}
       <div className="space-y-4">
-        {filteredQuotes.map((quote) => (
+        {paginatedQuotes.map((quote) => (
           <Card key={quote._id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
@@ -191,17 +311,32 @@ export default function QuotesPage() {
 
                 {/* Actions */}
                 <div className="flex flex-col gap-2">
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => handleViewDetails(quote)}
+                  >
                     <Eye className="h-4 w-4 mr-2" />
                     View Details
                   </Button>
                   {quote.status === "pending" && (
-                    <Button size="sm" className="w-full">
+                    <Button 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => handleApproveQuote(quote._id)}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
                       Approve Quote
                     </Button>
                   )}
                   {quote.status === "accepted" && (
-                    <Button variant="outline" size="sm" className="w-full">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => handleSchedulePickup(quote)}
+                    >
                       <Calendar className="h-4 w-4 mr-2" />
                       Schedule Pickup
                     </Button>
@@ -213,7 +348,43 @@ export default function QuotesPage() {
         ))}
       </div>
 
-      {filteredQuotes.length === 0 && (
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedQuotes.length)} of {filteredAndSortedQuotes.length} quotes
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {filteredAndSortedQuotes.length === 0 && (
         <Card>
           <CardContent className="p-12 text-center">
             <p className="text-gray-500">
@@ -222,6 +393,13 @@ export default function QuotesPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Quote Details Modal */}
+      <QuoteDetailsModal
+        quote={selectedQuote}
+        open={showDetailsModal}
+        onOpenChange={setShowDetailsModal}
+      />
     </div>
   );
 }

@@ -39,6 +39,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchDashboardData();
@@ -106,6 +107,8 @@ export default function AdminDashboard() {
         return "Quote Cancelled";
       case "rescheduled":
         return "Pickup Rescheduled";
+      case "pickup_scheduled":
+        return "Pickup Scheduled";
       case "modified":
         return "Info Updated";
       default:
@@ -132,6 +135,8 @@ export default function AdminDashboard() {
         return <Ban className="h-4 w-4 text-red-600" />;
       case "rescheduled":
         return <RotateCcw className="h-4 w-4 text-blue-600" />;
+      case "pickup_scheduled":
+        return <Calendar className="h-4 w-4 text-purple-600" />;
       case "modified":
         return <User className="h-4 w-4 text-orange-600" />;
       case "created":
@@ -140,6 +145,21 @@ export default function AdminDashboard() {
         return <Activity className="h-4 w-4 text-gray-600" />;
     }
   };
+
+  // Filter data based on search query
+  const filteredActions = recentActions.filter((action) =>
+    searchQuery === "" ||
+    action.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    action.vehicleName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    action.action.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredQuotes = recentQuotes.filter((quote) =>
+    searchQuery === "" ||
+    quote.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    quote.vehicleName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    quote.status.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -207,6 +227,16 @@ export default function AdminDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search quotes, customers..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <Filter className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+          </div>
           <span className="text-sm text-gray-500">
             Last updated: {lastRefresh.toLocaleTimeString()}
           </span>
@@ -277,12 +307,13 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {recentActions.length > 0 ? (
+            {filteredActions.length > 0 ? (
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {recentActions.slice(0, 8).map((action, index) => (
+                {filteredActions.slice(0, 8).map((action, index) => (
                   <div
                     key={index}
-                    className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                    className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                    onClick={() => window.location.href = `/admin/quotes?search=${action.quoteId}`}
                   >
                     <div className="flex-shrink-0 mt-1">
                       {getActionIcon(action.action)}
@@ -311,7 +342,9 @@ export default function AdminDashboard() {
             ) : (
               <div className="text-center py-8">
                 <Activity className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No recent activity</p>
+                <p className="text-gray-500">
+                  {searchQuery ? "No matching activity found" : "No recent activity"}
+                </p>
               </div>
             )}
           </CardContent>
@@ -326,12 +359,13 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {recentQuotes.length > 0 ? (
+            {filteredQuotes.length > 0 ? (
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {recentQuotes.map((quote) => (
+                {filteredQuotes.map((quote) => (
                   <div
                     key={quote._id}
-                    className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => window.location.href = `/admin/quotes?search=${quote.quoteId}`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -370,7 +404,9 @@ export default function AdminDashboard() {
             ) : (
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No recent quotes</p>
+                <p className="text-gray-500">
+                  {searchQuery ? "No matching quotes found" : "No recent quotes"}
+                </p>
               </div>
             )}
           </CardContent>
