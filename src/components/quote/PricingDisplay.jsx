@@ -275,43 +275,6 @@ export default function PricingDisplay() {
                   )}
                 </div>
               </div>
-
-              <div>
-                <h3 className="font-semibold text-gray-700 mb-3">
-                  Pricing Breakdown
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Base Price:</span>
-                    <span className="font-medium">
-                      ${pricing.basePrice.toLocaleString()}
-                    </span>
-                  </div>
-                  {Object.entries(questionPricing)
-                    .filter(([key, value]) => value !== 0)
-                    .map(([key, value]) => (
-                      <div key={key} className="flex justify-between">
-                        <span className="capitalize">
-                          {key.replace(/_/g, " ")}:
-                        </span>
-                        <span
-                          className={`font-medium ${
-                            value < 0 ? "text-red-600" : "text-green-600"
-                          }`}
-                        >
-                          {value > 0 ? "+" : ""}${value}
-                        </span>
-                      </div>
-                    ))}
-                  <Separator />
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Final Offer:</span>
-                    <span className="text-green-600">
-                      ${pricing.currentPrice.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>

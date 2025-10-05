@@ -202,7 +202,7 @@ export default function QuoteWizard() {
                       </div>
 
                       {/* UPDATED: PRICING BREAKDOWN */}
-                      {Object.keys(questionPricing).some(
+                      {/* {Object.keys(questionPricing).some(
                         (key) => questionPricing[key] !== 0
                       ) && (
                         <div className="text-xs space-y-1 bg-gray-50 p-3 rounded-lg">
@@ -232,7 +232,7 @@ export default function QuoteWizard() {
                               </div>
                             ))}
                         </div>
-                      )}
+                      )} */}
                     </div>
                   )}
 
