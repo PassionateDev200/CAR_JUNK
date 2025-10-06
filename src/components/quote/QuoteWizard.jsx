@@ -190,7 +190,7 @@ export default function QuoteWizard() {
                   )}
 
                   {/* UPDATED: PRICING DISPLAY */}
-                  {pricing.currentPrice > 0 && (
+                  {/* {pricing.currentPrice > 0 && (
                     <div className="space-y-4">
                       <div className="text-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
                         <div className="text-3xl font-bold text-green-600">
@@ -201,8 +201,7 @@ export default function QuoteWizard() {
                         </p>
                       </div>
 
-                      {/* UPDATED: PRICING BREAKDOWN */}
-                      {/* {Object.keys(questionPricing).some(
+                      {Object.keys(questionPricing).some(
                         (key) => questionPricing[key] !== 0
                       ) && (
                         <div className="text-xs space-y-1 bg-gray-50 p-3 rounded-lg">
@@ -232,9 +231,9 @@ export default function QuoteWizard() {
                               </div>
                             ))}
                         </div>
-                      )} */}
+                      )}
                     </div>
-                  )}
+                  )} */}
 
                   {/* ORIGINAL STEP PROGRESS */}
                   <div className="space-y-3">
