@@ -2,7 +2,7 @@
 
 "use client";
 
-import { createContext, useContext, useReducer, useEffect } from "react";
+import { createContext, useContext, useReducer, useEffect, useState, useRef } from "react";
 
 // Initial state
 const initialState = {
@@ -225,6 +225,7 @@ function vehicleReducer(state, action) {
       // Clear localStorage when resetting
       if (typeof window !== "undefined") {
         localStorage.removeItem("vehicleQuoteData");
+        localStorage.removeItem("vehicleQuoteTimestamp");
       }
       return {
         ...initialState,
@@ -245,6 +246,7 @@ function vehicleReducer(state, action) {
       // Clear localStorage when resetting
       if (typeof window !== "undefined") {
         localStorage.removeItem("vehicleQuoteData");
+        localStorage.removeItem("vehicleQuoteTimestamp");
       }
 
       return resetState;
@@ -272,28 +274,104 @@ const VehicleDispatchContext = createContext();
 // Provider component
 export function VehicleProvider({ children }) {
   const [state, dispatch] = useReducer(vehicleReducer, initialState);
+  const [isResetting, setIsResetting] = useState(false);
+  const lastSaveTime = useRef(0);
 
-  // Load saved data from localStorage on mount
+  // Load saved data from localStorage on mount and check for expiration
   useEffect(() => {
     const savedData = localStorage.getItem("vehicleQuoteData");
-    if (savedData) {
+    const savedTimestamp = localStorage.getItem("vehicleQuoteTimestamp");
+    
+    if (savedData && savedTimestamp) {
       try {
         const parsedData = JSON.parse(savedData);
+        const timestamp = parseInt(savedTimestamp);
+        const now = Date.now();
+        const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
+        
+        // Check if data is older than 30 minutes
+        if (now - timestamp > thirtyMinutes) {
+          console.log("Quote data expired (older than 30 minutes), clearing localStorage");
+          localStorage.removeItem("vehicleQuoteData");
+          localStorage.removeItem("vehicleQuoteTimestamp");
+          return; // Don't load expired data
+        }
+        
         dispatch({ type: ACTIONS.LOAD_SAVED_DATA, payload: parsedData });
       } catch (error) {
         console.error("Error loading saved vehicle data:", error);
+        // Clear corrupted data
+        localStorage.removeItem("vehicleQuoteData");
+        localStorage.removeItem("vehicleQuoteTimestamp");
       }
     }
   }, []);
 
   // Save data to localStorage whenever state changes (debounced)
+  // Skip saving if we're in the middle of a reset to prevent infinite loops
   useEffect(() => {
+    if (isResetting) return;
+    
+    const now = Date.now();
+    // Prevent saving too frequently (at least 1 second between saves)
+    if (now - lastSaveTime.current < 1000) return;
+    
     const timeoutId = setTimeout(() => {
-      localStorage.setItem("vehicleQuoteData", JSON.stringify(state));
+      try {
+        localStorage.setItem("vehicleQuoteData", JSON.stringify(state));
+        lastSaveTime.current = Date.now();
+        
+        // Save timestamp only if it doesn't exist (first time saving)
+        if (!localStorage.getItem("vehicleQuoteTimestamp")) {
+          localStorage.setItem("vehicleQuoteTimestamp", Date.now().toString());
+        }
+      } catch (error) {
+        console.error("Error saving to localStorage:", error);
+      }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [state]);
+  }, [state, isResetting]);
+
+  // Periodic cleanup check every 5 minutes
+  useEffect(() => {
+    let cleanupInterval;
+    
+    try {
+      cleanupInterval = setInterval(() => {
+        try {
+          const savedTimestamp = localStorage.getItem("vehicleQuoteTimestamp");
+          if (savedTimestamp && !isResetting) {
+            const timestamp = parseInt(savedTimestamp);
+            const now = Date.now();
+            const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
+            
+            // Check if data is older than 30 minutes
+            if (now - timestamp > thirtyMinutes) {
+              console.log("Periodic cleanup: Quote data expired, clearing localStorage");
+              setIsResetting(true);
+              localStorage.removeItem("vehicleQuoteData");
+              localStorage.removeItem("vehicleQuoteTimestamp");
+              // Reset the state to initial state
+              dispatch({ type: ACTIONS.RESET_VEHICLE_DATA });
+              // Reset the flag after a short delay
+              setTimeout(() => setIsResetting(false), 100);
+            }
+          }
+        } catch (error) {
+          console.error("Error in periodic cleanup:", error);
+        }
+      }, 5 * 60 * 1000); // Check every 5 minutes
+    } catch (error) {
+      console.error("Error setting up cleanup interval:", error);
+    }
+
+    return () => {
+      if (cleanupInterval) {
+        clearInterval(cleanupInterval);
+      }
+    };
+  }, [dispatch, isResetting]);
 
   return (
     <VehicleContext.Provider value={state}>

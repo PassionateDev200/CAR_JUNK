@@ -581,7 +581,7 @@ export default function VehicleConditionWizard({ onComplete }) {
       </Card>
 
       {/* UPDATED: Real-time Pricing Display */}
-      {pricing.currentPrice > 0 && (
+      {/* {pricing.currentPrice > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -614,7 +614,7 @@ export default function VehicleConditionWizard({ onComplete }) {
             </CardContent>
           </Card>
         </motion.div>
-      )}
+      )} */}
 
       {/* UPDATED: Debug Info (Remove in production) */}
       {/* {process.env.NODE_ENV === "development" && (
