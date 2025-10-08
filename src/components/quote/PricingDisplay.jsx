@@ -28,6 +28,7 @@ import {
   useVehicleDispatch,
   vehicleActions,
 } from "@/contexts/VehicleContext";
+import axios from "@/lib/axios";
 
 export default function PricingDisplay() {
   const vehicleState = useVehicle();
@@ -95,20 +96,8 @@ export default function PricingDisplay() {
       };
 
       // Submit quote
-      const response = await fetch("/api/quote", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(quoteData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to submit quote");
-      }
-
-      const result = await response.json();
+      const response = await axios.post("/api/quote", quoteData);
+      const result = response.data;
 
       // Update context with submission status
       dispatch(
@@ -123,13 +112,14 @@ export default function PricingDisplay() {
       setSubmissionSuccess(true);
     } catch (error) {
       console.error("Error submitting quote:", error);
-      setSubmissionError(error.message);
+      const errorMessage = error.response?.data?.error || error.message || "Failed to submit quote";
+      setSubmissionError(errorMessage);
 
       dispatch(
         vehicleActions.setSubmissionStatus({
           isSubmitted: false,
           isSubmitting: false,
-          error: error.message,
+          error: errorMessage,
         })
       );
     } finally {

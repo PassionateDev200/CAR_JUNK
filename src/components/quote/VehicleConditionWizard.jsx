@@ -412,12 +412,12 @@ export default function VehicleConditionWizard({ onComplete }) {
     setShowAccountModal(false);
     
     // Proceed to PricingDisplay
-    const completionData = {
-      conditionAssessmentComplete: true,
-      totalQuestionsAnswered: Object.keys(conditionAnswers).filter(
-        (key) => conditionAnswers[key] !== null
-      ).length,
-      finalPricing: pricing.currentPrice,
+      const completionData = {
+        conditionAssessmentComplete: true,
+        totalQuestionsAnswered: Object.keys(conditionAnswers).filter(
+          (key) => conditionAnswers[key] !== null
+        ).length,
+        finalPricing: pricing.currentPrice,
     };
     
     onComplete(completionData);

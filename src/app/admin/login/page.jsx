@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock, Mail, LogIn, ArrowLeft, Home } from "lucide-react";
+import axios from "@/lib/axios";
 
 // Simple loading fallback
 function LoadingFallback() {
@@ -39,22 +40,16 @@ function AdminLoginContent() {
     setError("");
 
     try {
-      const response = await fetch("/api/admin/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const response = await axios.post("/api/admin/auth/login", {
+        email,
+        password,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem("adminToken", data.token);
-        router.push("/admin");
-      } else {
-        setError(data.error || "Login failed");
-      }
+      localStorage.setItem("adminToken", response.data.token);
+      router.push("/admin");
     } catch (error) {
-      setError("Network error. Please try again.");
+      const errorMessage = error.response?.data?.error || error.message || "Login failed";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

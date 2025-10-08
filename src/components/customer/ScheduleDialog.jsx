@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Calendar, Clock, AlertCircle, MapPin, Phone } from "lucide-react";
+import { Calendar, Clock, AlertCircle, MapPin, Phone, CheckCircle } from "lucide-react";
 import axios from "axios";
 
 export default function ScheduleDialog({
@@ -36,33 +36,78 @@ export default function ScheduleDialog({
   const isRescheduling = hasExistingSchedule && quote?.status === "pickup_scheduled";
   const [formData, setFormData] = useState({
     scheduledDate: "",
-    scheduledTime: "",
-    timeSlot: "flexible",
+    pickupWindow: "", // Changed from scheduledTime to pickupWindow
     specialInstructions: "",
-    contactPhone: quote?.customer?.phone || "",
-    pickupAddress: quote?.customer?.address || "",
+    contactPhone: quote?.customer?.phone || quote?.sellerInfo?.phone || "",
+    pickupAddress: quote?.customer?.address || quote?.sellerInfo?.address || "",
   });
   const [error, setError] = useState("");
+  const [addressVerifying, setAddressVerifying] = useState(false);
+  const [addressVerified, setAddressVerified] = useState(false);
   const router = useRouter();
 
   // Update state field
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (error) setError("");
+    // Reset address verification when address changes
+    if (field === "pickupAddress") {
+      setAddressVerified(false);
+    }
+  };
+
+  // Address verification function
+  const verifyAddress = async () => {
+    if (!formData.pickupAddress || formData.pickupAddress.trim().length < 10) {
+      setError("Please enter a complete address (Street, City, State, ZIP)");
+      return;
+    }
+
+    setAddressVerifying(true);
+    setError("");
+
+    try {
+      const response = await axios.post("/api/verify-address", {
+        address: formData.pickupAddress,
+      });
+
+      if (response.data.verified) {
+        setAddressVerified(true);
+        // Optionally update with normalized address
+        if (response.data.normalizedAddress) {
+          setFormData((prev) => ({
+            ...prev,
+            pickupAddress: response.data.normalizedAddress,
+          }));
+        }
+      } else {
+        setError(response.data.error || "Address could not be verified. Please check and try again.");
+        setAddressVerified(false);
+      }
+    } catch (err) {
+      setError("Failed to verify address. Please check the address format.");
+      setAddressVerified(false);
+    } finally {
+      setAddressVerifying(false);
+    }
   };
 
   // Form validation
   const validateForm = () => {
-    if (!formData.scheduledDate || !formData.scheduledTime) {
-      setError("Please select both a pickup date and time.");
+    if (!formData.scheduledDate || !formData.pickupWindow) {
+      setError("Please select both a pickup date and time window.");
       return false;
     }
     if (!formData.contactPhone || formData.contactPhone.trim().length < 8) {
       setError("Please enter a valid phone number.");
       return false;
     }
-    if (!formData.pickupAddress || formData.pickupAddress.trim().length < 8) {
-      setError("Please enter a valid pickup address.");
+    if (!formData.pickupAddress || formData.pickupAddress.trim().length < 10) {
+      setError("Please enter a complete pickup address.");
+      return false;
+    }
+    if (!addressVerified) {
+      setError("Please verify your pickup address before scheduling.");
       return false;
     }
     // Date in the future
@@ -88,8 +133,7 @@ export default function ScheduleDialog({
       const response = await axios.post("/api/quote/schedule-pickup", {
         accessToken: quote.accessToken,
         scheduledDate: formData.scheduledDate,
-        scheduledTime: formData.scheduledTime,
-        timeSlot: formData.timeSlot,
+        pickupWindow: formData.pickupWindow, // Changed from scheduledTime/timeSlot
         specialInstructions: formData.specialInstructions,
         contactPhone: formData.contactPhone,
         pickupAddress: formData.pickupAddress,
@@ -122,19 +166,26 @@ export default function ScheduleDialog({
     }
   };
 
-  // Generate time slots
-  const timeSlots = [
-    "08:00",
-    "09:00",
-    "10:00",
-    "11:00",
-    "12:00",
-    "13:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-    "18:00",
+  // Define pickup time windows
+  const pickupWindows = [
+    {
+      value: "morning",
+      label: "Morning",
+      time: "8:00 AM - 12:00 PM",
+      description: "Early pickup window"
+    },
+    {
+      value: "afternoon",
+      label: "Afternoon",
+      time: "12:00 PM - 4:00 PM",
+      description: "Midday pickup window"
+    },
+    {
+      value: "evening",
+      label: "Evening",
+      time: "4:00 PM - 9:00 PM",
+      description: "Late pickup window"
+    },
   ];
   // Date range: tomorrow to +30d
   const tomorrow = new Date();
@@ -180,46 +231,28 @@ export default function ScheduleDialog({
             />
           </div>
 
-          {/* Time */}
+          {/* Pickup Time Window */}
           <div className="space-y-2">
-            <Label htmlFor="scheduledTime">Pickup Time *</Label>
+            <Label htmlFor="pickupWindow">Pickup Time Window *</Label>
             <Select
-              value={formData.scheduledTime}
+              value={formData.pickupWindow}
               onValueChange={(value) =>
-                handleInputChange("scheduledTime", value)
+                handleInputChange("pickupWindow", value)
               }
               required
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select pickup time" />
+                <SelectValue placeholder="Select pickup window" />
               </SelectTrigger>
               <SelectContent>
-                {timeSlots.map((time) => (
-                  <SelectItem key={time} value={time}>
-                    {time}
+                {pickupWindows.map((window) => (
+                  <SelectItem key={window.value} value={window.value}>
+                    <div className="flex flex-col">
+                      <span className="font-semibold">{window.label}</span>
+                      <span className="text-sm text-gray-500">{window.time}</span>
+                    </div>
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Time Flexibility */}
-          <div className="space-y-2">
-            <Label htmlFor="timeSlot">Time Flexibility</Label>
-            <Select
-              value={formData.timeSlot}
-              onValueChange={(value) => handleInputChange("timeSlot", value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="flexible">Flexible (±30 minutes)</SelectItem>
-                <SelectItem value="morning">Morning (8AM - 12PM)</SelectItem>
-                <SelectItem value="afternoon">
-                  Afternoon (12PM - 6PM)
-                </SelectItem>
-                <SelectItem value="evening">Evening (6PM - 8PM)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -245,18 +278,54 @@ export default function ScheduleDialog({
           {/* Pickup Address */}
           <div className="space-y-2">
             <Label htmlFor="pickupAddress">Pickup Address *</Label>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-gray-400" />
-              <Input
-                id="pickupAddress"
-                placeholder="Street, City, State, ZIP"
-                value={formData.pickupAddress}
-                onChange={(e) =>
-                  handleInputChange("pickupAddress", e.target.value)
-                }
-                required
-                maxLength={200}
-              />
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <Input
+                  id="pickupAddress"
+                  placeholder="Street, City, State, ZIP"
+                  value={formData.pickupAddress}
+                  onChange={(e) =>
+                    handleInputChange("pickupAddress", e.target.value)
+                  }
+                  required
+                  maxLength={200}
+                  className={addressVerified ? "border-green-500" : ""}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant={addressVerified ? "outline" : "secondary"}
+                  size="sm"
+                  onClick={verifyAddress}
+                  disabled={addressVerifying || !formData.pickupAddress || formData.pickupAddress.length < 10}
+                  className="flex-1"
+                >
+                  {addressVerifying ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Verifying...
+                    </>
+                  ) : addressVerified ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                      Address Verified
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Verify Address
+                    </>
+                  )}
+                </Button>
+              </div>
+              {addressVerified && (
+                <p className="text-xs text-green-600 flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  Address verified and ready for pickup
+                </p>
+              )}
             </div>
           </div>
 

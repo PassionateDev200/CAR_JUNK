@@ -25,9 +25,9 @@ export async function POST(request) {
     // Find quote by email and quoteId
     const quote = await Quote.findOne({
       quoteId: normalizedQuoteId,
-      "customer.email": normalizedEmail,
+      "sellerInfo.email": normalizedEmail,
       status: { $nin: ["expired", "completed"] }, // Exclude expired/completed quotes
-    }).select("accessToken quoteId vehicleName status expiresAt");
+    }).select("accessToken quoteId vehicleDetails status expiresAt");
 
     if (!quote) {
       return NextResponse.json(

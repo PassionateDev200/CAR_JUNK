@@ -3,6 +3,7 @@
 "use client";
 
 import { createContext, useContext, useReducer, useEffect, useState, useRef } from "react";
+import axios from "@/lib/axios";
 
 // Initial state
 const initialState = {
@@ -282,8 +283,8 @@ export function VehicleProvider({ children }) {
     let isMounted = true;
     (async () => {
       try {
-        const resp = await fetch("/api/auth/me", { cache: "no-store" });
-        const data = await resp.json();
+        const resp = await axios.get("/api/auth/me");
+        const data = resp.data;
         if (isMounted && data?.authenticated && data.user?.email) {
           dispatch(
             vehicleActions.setSellerInfo({
@@ -342,7 +343,7 @@ export function VehicleProvider({ children }) {
     
     const timeoutId = setTimeout(() => {
       try {
-        localStorage.setItem("vehicleQuoteData", JSON.stringify(state));
+      localStorage.setItem("vehicleQuoteData", JSON.stringify(state));
         lastSaveTime.current = Date.now();
         
         // Save timestamp only if it doesn't exist (first time saving)

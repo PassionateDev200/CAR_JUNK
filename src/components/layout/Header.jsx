@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useVehicle, useVehicleDispatch, vehicleActions } from "@/contexts/VehicleContext";
+import axios from "@/lib/axios";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -42,7 +43,7 @@ const Header = () => {
   // Logout handler
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await axios.post("/api/auth/logout");
       // Clear seller info from context
       dispatch(
         vehicleActions.setSellerInfo({

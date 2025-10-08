@@ -28,6 +28,7 @@ import {
   useVehicleDispatch,
   vehicleActions,
 } from "@/contexts/VehicleContext";
+import axios from "@/lib/axios";
 
 const vehicleData = {
   years: Array.from({ length: 85 }, (_, i) => 2025 - i),
@@ -181,8 +182,8 @@ export default function VehicleBasicInfo({ onComplete, onPricingUpdate }) {
     setError("");
 
     try {
-      const response = await fetch(`/api/decode-vin?vin=${vin}`);
-      const result = await response.json();
+      const response = await axios.get(`/api/decode-vin?vin=${vin}`);
+      const result = response.data;
 
       console.log("VIN decode result:", result);
 

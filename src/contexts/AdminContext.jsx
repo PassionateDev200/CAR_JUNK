@@ -1,6 +1,7 @@
 /** route: src/contexts/AdminContext.jsx */
 "use client";
 import { createContext, useContext, useReducer, useEffect } from "react";
+import axios from "@/lib/axios";
 
 const AdminContext = createContext();
 const AdminDispatchContext = createContext();
@@ -47,14 +48,11 @@ export function AdminProvider({ children }) {
       const token = localStorage.getItem("adminToken");
       if (!token) return;
 
-      const response = await fetch("/api/admin/auth/verify", {
+      const response = await axios.get("/api/admin/auth/verify", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        dispatch({ type: "SET_ADMIN", payload: data.admin });
-      }
+      dispatch({ type: "SET_ADMIN", payload: response.data.admin });
     } catch (error) {
       console.error("Failed to load admin data:", error);
     }

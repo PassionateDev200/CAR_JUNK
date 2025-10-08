@@ -34,7 +34,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import axios from "axios";
+import axios from "@/lib/axios";
 
 const AdminHeader = () => {
   const [admin, setAdmin] = useState(null);
@@ -59,13 +59,10 @@ const AdminHeader = () => {
     try {
       const token = localStorage.getItem("adminToken");
       if (token) {
-        const response = await fetch("/api/admin/auth/verify", {
+        const response = await axios.get("/api/admin/auth/verify", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (response.ok) {
-          const data = await response.json();
-          setAdmin(data.admin);
-        }
+        setAdmin(response.data.admin);
       }
     } catch (error) {
       console.error("Failed to load admin data:", error);

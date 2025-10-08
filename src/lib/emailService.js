@@ -17,6 +17,10 @@ import {
   generateAdminNotificationHTML,
   generateAdminNotificationText,
 } from "./email-templates/adminNotifications";
+import {
+  generatePickupScheduledConfirmationHTML,
+  generatePickupScheduledConfirmationText,
+} from "./email-templates/pickupScheduledConfirmation";
 
 // Mailtrap configuration
 const TOKEN = "c7a4970c872948b1afadf1dad1b03379";
@@ -243,6 +247,64 @@ export const sendTestEmail = async (recipientEmail) => {
   }
 };
 
+// Function to send pickup scheduled confirmation email to seller
+export const sendPickupScheduledConfirmation = async ({
+  to,
+  customerName,
+  quoteId,
+  vehicleName,
+  offerAmount,
+  scheduledDate,
+  pickupWindow,
+  pickupTimeRange,
+  pickupAddress,
+  contactPhone,
+  specialInstructions,
+  accessToken,
+}) => {
+  try {
+    const mailOptions = {
+      from: sender,
+      to: [to],
+      subject: `✅ Pickup Confirmed: $${offerAmount.toLocaleString()} for your ${vehicleName}`,
+      text: generatePickupScheduledConfirmationText({
+        customerName,
+        quoteId,
+        vehicleName,
+        offerAmount,
+        scheduledDate,
+        pickupWindow,
+        pickupTimeRange,
+        pickupAddress,
+        contactPhone,
+        specialInstructions,
+        accessToken,
+      }),
+      html: generatePickupScheduledConfirmationHTML({
+        customerName,
+        quoteId,
+        vehicleName,
+        offerAmount,
+        scheduledDate,
+        pickupWindow,
+        pickupTimeRange,
+        pickupAddress,
+        contactPhone,
+        specialInstructions,
+        accessToken,
+      }),
+      category: "Pickup Scheduled Confirmation",
+    };
+
+    const info = await transport.sendMail(mailOptions);
+    console.log("📧 Pickup scheduled confirmation email sent to seller:", info);
+    return { success: true, info };
+  } catch (error) {
+    console.error("📧 Error sending pickup scheduled confirmation email:", error);
+    return { success: false, error: error.message };
+  }
+};
+
 // Add this function to your existing emailService.js file
 
 export const sendPickupNotificationEmail = async ({
@@ -276,7 +338,7 @@ export const sendPickupNotificationEmail = async ({
     const mailOptions = {
       from: sender, // Using your existing sender configuration
       to: [adminEmail],
-      subject: `🚙 Pickup Scheduled: ${quote.vehicleName} - Quote ${quote.quoteId}`,
+      subject: `✅ Offer Accepted & Pickup Scheduled: ${quote.vehicleName} - $${quote.pricing.finalPrice.toLocaleString()} - Quote ${quote.quoteId}`,
       text: generatePickupNotificationText({
         quote,
         formattedDate,
@@ -318,9 +380,9 @@ const generatePickupNotificationText = ({
   specialInstructions,
 }) => {
   return `
-🚙 NEW PICKUP SCHEDULED
+✅ OFFER ACCEPTED & PICKUP SCHEDULED
 
-A customer has scheduled a pickup for their vehicle.
+A customer has accepted your offer and scheduled a pickup for their vehicle!
 
 📅 PICKUP DETAILS
 Date: ${formattedDate}
@@ -388,13 +450,13 @@ const generatePickupNotificationHTML = ({
     <body>
       <div class="container">
         <div class="header">
-          <h1>🚙 Pickup Scheduled</h1>
-          <p>A customer has scheduled a vehicle pickup</p>
+          <h1>✅ Offer Accepted & Pickup Scheduled</h1>
+          <p>A customer has accepted your offer and scheduled a vehicle pickup</p>
         </div>
         
         <div class="content">
           <div class="urgent">
-            <strong>⚡ Action Required:</strong> Please coordinate with the customer and update the pickup status in the admin dashboard.
+            <strong>⚡ Action Required:</strong> The seller has accepted the offer and scheduled pickup. Please coordinate with the customer and update the pickup status in the admin dashboard.
           </div>
 
           <div class="section">

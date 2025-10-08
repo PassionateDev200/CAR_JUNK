@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { User, LogIn, Mail, Lock, X, Eye, EyeOff } from "lucide-react";
 import { useVehicle, useVehicleDispatch, vehicleActions } from "@/contexts/VehicleContext";
+import axios from "@/lib/axios";
 
 export default function AccountModal({ isOpen, onClose, mode = "create", onSuccess }) {
   const vehicleState = useVehicle();
@@ -76,17 +77,12 @@ export default function AccountModal({ isOpen, onClose, mode = "create", onSucce
 
     try {
       const endpoint = mode === "create" ? "/api/auth/register" : "/api/auth/login";
-      const resp = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.email, password: formData.password }),
+      const resp = await axios.post(endpoint, {
+        email: formData.email,
+        password: formData.password,
       });
 
-      const data = await resp.json();
-      if (!resp.ok) {
-        // Surface server error messages like 409/401
-        throw new Error(data.error || (mode === "create" ? "Registration failed" : "Login failed"));
-      }
+      const data = resp.data;
 
       // Persist to context
       dispatch(
@@ -106,7 +102,8 @@ export default function AccountModal({ isOpen, onClose, mode = "create", onSucce
       }, 1000);
 
     } catch (error) {
-      setError(error.message);
+      const errorMessage = error.response?.data?.error || error.message || (mode === "create" ? "Registration failed" : "Login failed");
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

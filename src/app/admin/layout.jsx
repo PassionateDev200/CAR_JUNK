@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { AdminProvider } from "@/contexts/AdminContext";
+import axios from "@/lib/axios";
 
 export default function AdminLayout({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -32,16 +33,11 @@ export default function AdminLayout({ children }) {
         return;
       }
 
-      const res = await fetch("/api/admin/auth/verify", {
+      const res = await axios.get("/api/admin/auth/verify", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (res.ok) {
-        setIsAuthenticated(true);
-      } else {
-        localStorage.removeItem("adminToken");
-        router.push("/admin/login");
-      }
+      setIsAuthenticated(true);
     } catch {
       localStorage.removeItem("adminToken");
       router.push("/admin/login");

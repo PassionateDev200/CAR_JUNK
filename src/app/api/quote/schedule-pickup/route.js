@@ -3,7 +3,10 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import Quote from "@/models/Quote";
-import { sendPickupNotificationEmail } from "@/lib/emailService";
+import { 
+  sendPickupNotificationEmail,
+  sendPickupScheduledConfirmation 
+} from "@/lib/emailService";
 export async function POST(request) {
   try {
     await connectToDatabase();
@@ -11,8 +14,7 @@ export async function POST(request) {
     const {
       accessToken,
       scheduledDate,
-      scheduledTime,
-      timeSlot,
+      pickupWindow, // Changed from scheduledTime/timeSlot to pickupWindow
       specialInstructions,
       contactPhone,
       pickupAddress,
@@ -21,12 +23,21 @@ export async function POST(request) {
     if (
       !accessToken ||
       !scheduledDate ||
-      !scheduledTime ||
+      !pickupWindow ||
       !contactPhone ||
       !pickupAddress
     ) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+    
+    // Validate pickup window value
+    const validWindows = ["morning", "afternoon", "evening"];
+    if (!validWindows.includes(pickupWindow)) {
+      return NextResponse.json(
+        { error: "Invalid pickup window. Must be morning, afternoon, or evening" },
         { status: 400 }
       );
     }
@@ -71,16 +82,22 @@ export async function POST(request) {
     if (isUpdatingSchedule) {
       originalScheduleDetails = {
         originalDate: quote.pickupDetails.scheduledDate,
-        originalTime: quote.pickupDetails.scheduledTime,
-        originalTimeSlot: quote.pickupDetails.timeSlot,
+        originalWindow: quote.pickupDetails.pickupWindow || quote.pickupDetails.timeSlot,
       };
     }
+    
+    // Map pickup window to time ranges for display
+    const windowTimeRanges = {
+      morning: "8:00 AM - 12:00 PM",
+      afternoon: "12:00 PM - 4:00 PM",
+      evening: "4:00 PM - 9:00 PM"
+    };
 
     // Update quote with pickup details
     quote.pickupDetails = {
       scheduledDate: new Date(scheduledDate),
-      scheduledTime,
-      timeSlot: timeSlot || "flexible",
+      pickupWindow: pickupWindow, // Store the window value
+      pickupTimeRange: windowTimeRanges[pickupWindow], // Store readable time range
       address: pickupAddress,
       specialInstructions: specialInstructions || "",
       contactPhone,
@@ -97,15 +114,15 @@ export async function POST(request) {
       quote.customerActions.actionHistory.push({
         action: "rescheduled",
         reason: "customer_rescheduled_pickup",
-        note: `Pickup rescheduled from ${originalScheduleDetails.originalDate.toISOString().split('T')[0]} at ${originalScheduleDetails.originalTime} to ${scheduledDate} at ${scheduledTime}`,
+        note: `Pickup rescheduled from ${originalScheduleDetails.originalDate.toISOString().split('T')[0]} (${originalScheduleDetails.originalWindow}) to ${scheduledDate} (${pickupWindow})`,
         timestamp: new Date(),
         customerInitiated: true,
         details: {
           originalDate: originalScheduleDetails.originalDate,
-          originalTime: originalScheduleDetails.originalTime,
+          originalWindow: originalScheduleDetails.originalWindow,
           newDate: scheduledDate,
-          newTime: scheduledTime,
-          timeSlot,
+          newWindow: pickupWindow,
+          newTimeRange: windowTimeRanges[pickupWindow],
           specialInstructions,
         },
       });
@@ -114,26 +131,51 @@ export async function POST(request) {
       quote.customerActions.actionHistory.push({
         action: "pickup_scheduled",
         reason: "customer_scheduled_pickup",
-        note: `Pickup scheduled for ${scheduledDate} at ${scheduledTime}`,
+        note: `Pickup scheduled for ${scheduledDate} (${pickupWindow}: ${windowTimeRanges[pickupWindow]})`,
         timestamp: new Date(),
         customerInitiated: true,
         details: {
           scheduledDate,
-          scheduledTime,
-          timeSlot,
+          pickupWindow,
+          pickupTimeRange: windowTimeRanges[pickupWindow],
           specialInstructions,
         },
       });
     }
     // Save the updated quote
     await quote.save();
+    
+    // Send confirmation email to seller
+    try {
+      await sendPickupScheduledConfirmation({
+        to: quote.customer.email,
+        customerName: quote.customer.name,
+        quoteId: quote.quoteId,
+        vehicleName: quote.vehicleName,
+        offerAmount: quote.pricing.finalPrice,
+        scheduledDate,
+        pickupWindow,
+        pickupTimeRange: windowTimeRanges[pickupWindow],
+        pickupAddress,
+        contactPhone,
+        specialInstructions: specialInstructions || "",
+        accessToken: quote.accessToken,
+      });
+      console.log(
+        `📧 Pickup confirmation email sent to seller ${quote.customer.email} for quote ${quote.quoteId}`
+      );
+    } catch (emailError) {
+      console.error("Failed to send pickup confirmation email to seller:", emailError);
+      // Don't fail the request if email fails, but log it
+    }
+    
     // Send admin notification email
     try {
       await sendPickupNotificationEmail({
         quote,
         scheduledDate,
-        scheduledTime,
-        timeSlot,
+        pickupWindow,
+        pickupTimeRange: windowTimeRanges[pickupWindow],
         specialInstructions,
         contactPhone,
         pickupAddress,
@@ -157,8 +199,8 @@ export async function POST(request) {
       quote: updatedQuote, // Return the complete updated quote
       pickupDetails: {
         scheduledDate,
-        scheduledTime,
-        timeSlot,
+        pickupWindow,
+        pickupTimeRange: windowTimeRanges[pickupWindow],
         address: pickupAddress,
         contactPhone,
       },
