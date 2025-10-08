@@ -277,6 +277,30 @@ export function VehicleProvider({ children }) {
   const [isResetting, setIsResetting] = useState(false);
   const lastSaveTime = useRef(0);
 
+  // Bootstrap session: fetch /api/auth/me to restore sellerInfo on refresh
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const resp = await fetch("/api/auth/me", { cache: "no-store" });
+        const data = await resp.json();
+        if (isMounted && data?.authenticated && data.user?.email) {
+          dispatch(
+            vehicleActions.setSellerInfo({
+              name: state.sellerInfo.name || "",
+              email: data.user.email,
+              phone: state.sellerInfo.phone || "",
+              address: state.sellerInfo.address || "",
+            })
+          );
+        }
+      } catch {}
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Load saved data from localStorage on mount and check for expiration
   useEffect(() => {
     const savedData = localStorage.getItem("vehicleQuoteData");

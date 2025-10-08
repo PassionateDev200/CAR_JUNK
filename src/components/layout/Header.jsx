@@ -18,16 +18,46 @@ import {
   Settings,
   Shield,
   User,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { useVehicle, useVehicleDispatch, vehicleActions } from "@/contexts/VehicleContext";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
+  
+  // Get user authentication state from VehicleContext
+  const vehicleState = useVehicle();
+  const dispatch = useVehicleDispatch();
+  const { sellerInfo } = vehicleState;
+  
+  // Check if user is logged in
+  const isLoggedIn = sellerInfo?.name || sellerInfo?.email;
+  
+  // Logout handler
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      // Clear seller info from context
+      dispatch(
+        vehicleActions.setSellerInfo({
+          name: "",
+          email: "",
+          phone: "",
+          address: "",
+        })
+      );
+      // Redirect to home
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -188,13 +218,34 @@ const Header = () => {
                 </Button>
               </Link>
 
-              {/* Main CTA Button */}
-              <Link href="/quote">
-                <Button className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-semibold px-6 py-2 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                  Get Started
-                  <ChevronRight className="ml-1 w-4 h-4" />
-                </Button>
-              </Link>
+              {/* User Info or Get Started Button */}
+              {isLoggedIn ? (
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2 bg-blue-50 px-3 py-2 rounded-lg">
+                    <User className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">
+                      {sellerInfo.name || sellerInfo.email}
+                    </span>
+                  </div>
+                  <Button
+                    onClick={handleLogout}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center space-x-2 border-gray-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200"
+                    title="Logout"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="hidden lg:inline">Logout</span>
+                  </Button>
+                </div>
+              ) : (
+                <Link href="/quote">
+                  <Button className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-semibold px-6 py-2 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                    Get Started
+                    <ChevronRight className="ml-1 w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -258,16 +309,39 @@ const Header = () => {
                   <span className="ml-3">Admin Login</span>
                 </Link>
 
-                {/* Mobile Main CTA */}
-                <Link
-                  href="/quote"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block w-full mt-6"
-                >
-                  <Button className="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-semibold py-3 rounded-xl">
-                    Get Started
-                  </Button>
-                </Link>
+                {/* Mobile User Info or CTA */}
+                {isLoggedIn ? (
+                  <div className="border-t border-gray-200 mt-4 pt-6 space-y-3">
+                    <div className="flex items-center p-4 rounded-2xl bg-blue-50">
+                      <User className="w-5 h-5 text-blue-600" />
+                      <span className="ml-3 text-lg font-medium text-blue-800">
+                        {sellerInfo.name || sellerInfo.email}
+                      </span>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        handleLogout();
+                        setMobileMenuOpen(false);
+                      }}
+                      variant="outline"
+                      className="w-full flex items-center justify-center py-3 text-lg"
+                    >
+                      <LogOut className="w-5 h-5 mr-2" />
+                      Logout
+                    </Button>
+                  </div>
+                ) : (
+                  <Link
+                    href="/quote"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block w-full mt-6"
+                  >
+                    <Button className="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-semibold py-3 rounded-xl">
+                      Get Started
+                      <ChevronRight className="ml-2 w-5 h-5" />
+                    </Button>
+                  </Link>
+                )}
               </div>
             </motion.div>
           </motion.div>

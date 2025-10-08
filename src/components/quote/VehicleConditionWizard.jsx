@@ -58,6 +58,10 @@ import InteriorQuestion from "./questions/InteriorQuestion";
 import FloodFireQuestion from "./questions/FloodFireQuestion";
 import VehicleQuadrantSelector from "./questions/VehicleQuadrantSelector";
 
+// Authentication Modals
+import PriceModal from "./PriceModal";
+import AccountModal from "./AccountModal";
+
 // Define the complete question flow
 const CONDITION_STEPS = [
   {
@@ -207,6 +211,11 @@ export default function VehicleConditionWizard({ onComplete }) {
   const [disqualificationReason, setDisqualificationReason] = useState("");
   const [showSubQuestion, setShowSubQuestion] = useState(false);
   const [subQuestionData, setSubQuestionData] = useState(null);
+  
+  // Authentication modal states
+  const [showPriceModal, setShowPriceModal] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [accountModalMode, setAccountModalMode] = useState("create"); // "create" or "login"
 
   const currentStep = CONDITION_STEPS[currentQuestionIndex];
   const CurrentQuestionComponent = currentStep.component;
@@ -340,22 +349,14 @@ export default function VehicleConditionWizard({ onComplete }) {
     if (currentQuestionIndex < CONDITION_STEPS.length - 1) {
       dispatch(vehicleActions.setCurrentQuestion(currentQuestionIndex + 1));
     } else {
-      // ✅ FIXED: Pass proper stepData when calling onComplete
-      console.log("🎉 All questions completed! Moving to PricingDisplay...");
+      // ✅ NEW: Show PriceModal instead of going directly to PricingDisplay
+      console.log("🎉 All questions completed! Showing price modal...");
 
       // Mark step as completed first
       dispatch(vehicleActions.markStepCompleted(2));
 
-      // ✅ NEW: Pass completion data to parent
-      const completionData = {
-        conditionAssessmentComplete: true,
-        totalQuestionsAnswered: Object.keys(conditionAnswers).filter(
-          (key) => conditionAnswers[key] !== null
-        ).length,
-        finalPricing: pricing.currentPrice,
-      };
-
-      onComplete(completionData); // ✅ Now passes data instead of undefined
+      // Show the price modal with authentication options
+      setShowPriceModal(true);
     }
   };
 
@@ -383,22 +384,53 @@ export default function VehicleConditionWizard({ onComplete }) {
     if (currentQuestionIndex < CONDITION_STEPS.length - 1) {
       dispatch(vehicleActions.setCurrentQuestion(currentQuestionIndex + 1));
     } else {
-      // ✅ FIXED: Pass proper stepData for sub-question completion
-      console.log("🎉 Last question with sub-question completed!");
+      // ✅ NEW: Show PriceModal after sub-question completion
+      console.log("🎉 Last question with sub-question completed! Showing price modal...");
 
       dispatch(vehicleActions.markStepCompleted(2));
 
-      const completionData = {
-        conditionAssessmentComplete: true,
-        totalQuestionsAnswered: Object.keys(conditionAnswers).filter(
-          (key) => conditionAnswers[key] !== null
-        ).length,
-        finalPricing: pricing.currentPrice,
-        lastQuestionHadSubQuestion: true,
-      };
-
-      onComplete(completionData); // ✅ Now passes data instead of undefined
+      // Show the price modal with authentication options
+      setShowPriceModal(true);
     }
+  };
+
+  // Modal handler functions
+  const handleCreateAccount = () => {
+    setAccountModalMode("create");
+    setShowPriceModal(false);
+    setShowAccountModal(true);
+  };
+
+  const handleLogin = () => {
+    setAccountModalMode("login");
+    setShowPriceModal(false);
+    setShowAccountModal(true);
+  };
+
+  const handleAccountSuccess = () => {
+    // Close account modal
+    setShowAccountModal(false);
+    
+    // Proceed to PricingDisplay
+    const completionData = {
+      conditionAssessmentComplete: true,
+      totalQuestionsAnswered: Object.keys(conditionAnswers).filter(
+        (key) => conditionAnswers[key] !== null
+      ).length,
+      finalPricing: pricing.currentPrice,
+    };
+    
+    onComplete(completionData);
+  };
+
+  const handlePriceModalClose = () => {
+    setShowPriceModal(false);
+  };
+
+  const handleAccountModalClose = () => {
+    setShowAccountModal(false);
+    // Optionally reopen price modal
+    setShowPriceModal(true);
   };
 
   // Navigation functions (context-aware)
@@ -687,6 +719,22 @@ export default function VehicleConditionWizard({ onComplete }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Price Modal - Shows after all questions completed */}
+      <PriceModal
+        isOpen={showPriceModal}
+        onClose={handlePriceModalClose}
+        onCreateAccount={handleCreateAccount}
+        onLogin={handleLogin}
+      />
+
+      {/* Account Modal - For registration/login */}
+      <AccountModal
+        isOpen={showAccountModal}
+        onClose={handleAccountModalClose}
+        mode={accountModalMode}
+        onSuccess={handleAccountSuccess}
+      />
     </div>
   );
 }
