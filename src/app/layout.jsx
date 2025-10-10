@@ -17,6 +17,7 @@ const inter = Inter({
 });
 
 export const metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://pnwcashforcars.com'),
   title: "PNW Cash For Cars - Instant Junk Car Quotes | Get Cash Today",
   description:
     "Get instant cash offers for your junk car. Free pickup and cash on the spot. Top dollar guaranteed. Sell your car in any condition - running or not.",

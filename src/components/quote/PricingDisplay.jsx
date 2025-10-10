@@ -3,26 +3,33 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import {
-  DollarSign,
-  Car,
-  User,
-  Mail,
-  Phone,
-  MapPin,
+  Box,
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Divider,
+  Alert,
+  CircularProgress,
+  Stack,
+  Fade,
+  Grid,
+  Chip,
+} from "@mui/material";
+import {
   CheckCircle,
-  Clock,
-  AlertCircle,
-} from "lucide-react";
+  Email,
+  Phone,
+  Person,
+  DirectionsCar,
+  AttachMoney,
+  Schedule,
+  Verified,
+  TrendingUp,
+  LocalOffer,
+} from "@mui/icons-material";
 import {
   useVehicle,
   useVehicleDispatch,
@@ -112,7 +119,8 @@ export default function PricingDisplay() {
       setSubmissionSuccess(true);
     } catch (error) {
       console.error("Error submitting quote:", error);
-      const errorMessage = error.response?.data?.error || error.message || "Failed to submit quote";
+      const errorMessage =
+        error.response?.data?.error || error.message || "Failed to submit quote";
       setSubmissionError(errorMessage);
 
       dispatch(
@@ -129,257 +137,337 @@ export default function PricingDisplay() {
 
   const vehicleName = `${vehicleDetails.year} ${vehicleDetails.make} ${vehicleDetails.model}`;
 
-  // Success screen
+  // Success screen - LinkedIn style
   if (submissionSuccess) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Card className="text-center">
-            <CardContent className="p-8">
-              <div className="mb-6">
-                <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  Quote Submitted Successfully!
-                </h2>
-                <p className="text-gray-600">
-                  Your quote has been submitted and we've sent you a
-                  confirmation email.
-                </p>
-              </div>
+      <Container maxWidth="md" sx={{ py: 8 }}>
+        <Fade in timeout={600}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 6,
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "divider",
+              textAlign: "center",
+            }}
+          >
+            {/* Success Icon */}
+            <Box
+              sx={{
+                width: 80,
+                height: 80,
+                bgcolor: "success.main",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                mx: "auto",
+                mb: 3,
+              }}
+            >
+              <CheckCircle sx={{ fontSize: 48, color: "white" }} />
+            </Box>
 
-              <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
-                <div className="text-3xl font-bold text-green-600 mb-2">
-                  ${pricing.currentPrice.toLocaleString()}
-                </div>
-                <p className="text-sm text-green-700 mb-4">
-                  Your offer for {vehicleName}
-                </p>
-                <div className="text-sm text-gray-600">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <Clock className="h-4 w-4" />
-                    <span>Quote ID: {quoteId}</span>
-                  </div>
-                  <p>Valid for 7 days from today</p>
-                </div>
-              </div>
+            {/* Success Message */}
+            <Typography variant="h4" fontWeight={600} gutterBottom>
+              Quote Submitted Successfully!
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+              We've received your quote and sent a confirmation email to your inbox.
+            </Typography>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold text-blue-800 mb-2">
-                  📧 Check Your Email
-                </h3>
-                <p className="text-sm text-blue-700">
-                  We've sent a confirmation email to{" "}
-                  <strong>{sellerInfo.email}</strong> with:
-                </p>
-                <ul className="text-sm text-blue-700 mt-2 space-y-1">
-                  <li>• Your quote details and access link</li>
-                  <li>• Instructions to manage your quote</li>
-                  <li>• Contact information for questions</li>
-                </ul>
-              </div>
+            {/* Offer Amount Card */}
+            <Paper
+              elevation={0}
+              sx={{
+                bgcolor: "#f3f6f8",
+                border: "2px solid",
+                borderColor: "success.main",
+                mb: 4,
+                py: 4,
+                px: 3,
+                borderRadius: 2,
+              }}
+            >
+              <Typography variant="h2" fontWeight={700} color="success.main">
+                ${pricing.currentPrice.toLocaleString()}
+              </Typography>
+              <Typography variant="h6" color="text.secondary" sx={{ mt: 1, mb: 3 }}>
+                Your offer for {vehicleName}
+              </Typography>
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={2}
+                justifyContent="center"
+              >
+                <Chip
+                  icon={<Verified />}
+                  label={`Quote ID: ${quoteId}`}
+                  color="success"
+                  variant="outlined"
+                />
+                <Chip
+                  icon={<Schedule />}
+                  label="Valid for 7 days"
+                  color="success"
+                  variant="outlined"
+                />
+              </Stack>
+            </Paper>
 
-              <div className="space-y-4">
-                <Button
-                  onClick={() => (window.location.href = "/")}
-                  className="w-full"
-                >
-                  Get Another Quote
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => (window.location.href = "/how-it-works")}
-                  className="w-full"
-                >
-                  Learn More About Our Process
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
+            {/* Email Confirmation Box */}
+            <Alert
+              severity="info"
+              icon={<Email />}
+              sx={{
+                mb: 4,
+                textAlign: "left",
+                "& .MuiAlert-message": { width: "100%" },
+              }}
+            >
+              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                Check Your Email
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                We've sent a confirmation to <strong>{sellerInfo.email}</strong> with:
+              </Typography>
+              <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                <Typography component="li" variant="body2" color="text.secondary">
+                  Your quote details and access link
+                </Typography>
+                <Typography component="li" variant="body2" color="text.secondary">
+                  Instructions to manage your quote
+                </Typography>
+                <Typography component="li" variant="body2" color="text.secondary">
+                  Contact information for questions
+                </Typography>
+              </Box>
+            </Alert>
+
+            {/* Action Buttons */}
+            <Stack spacing={2}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={() => (window.location.href = "/")}
+                sx={{
+                  py: 1.5,
+                  textTransform: "none",
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  borderRadius: 2,
+                }}
+              >
+                Get Another Quote
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={() => (window.location.href = "/how-it-works")}
+                sx={{
+                  py: 1.5,
+                  textTransform: "none",
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  borderRadius: 2,
+                }}
+              >
+                Learn More About Our Process
+              </Button>
+            </Stack>
+          </Paper>
+        </Fade>
+      </Container>
     );
   }
 
+  // Main form - LinkedIn style
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Your Final Offer
-          </h1>
-          <p className="text-gray-600">
-            Complete your information below to receive your cash offer
-          </p>
-        </div>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box>
+        {/* Main Content */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 4,
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: "divider",
+            bgcolor: "background.paper",
+          }}
+        >
+          {/* Offer Display */}
+          <Box
+            sx={{
+              textAlign: "center",
+              mb: 4,
+              pb: 4,
+              borderBottom: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <Typography
+              variant="h5"
+              fontWeight={600}
+              gutterBottom
+              color="text.secondary"
+            >
+              We'd love to buy your
+            </Typography>
+            <Typography variant="h4" fontWeight={700} gutterBottom>
+              {vehicleName}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              for
+            </Typography>
+            
+            {/* Price with icon */}
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", mb: 2 }}>
+              <Box
+                sx={{
+                  width: 64,
+                  height: 64,
+                  bgcolor: "primary.main",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mr: 2,
+                }}
+              >
+                <AttachMoney sx={{ fontSize: 40, color: "white" }} />
+              </Box>
+              <Typography variant="h2" fontWeight={700} color="primary.main">
+                {pricing.currentPrice.toLocaleString()}
+              </Typography>
+            </Box>
+            
+            <Chip 
+              icon={<LocalOffer />} 
+              label="Final Offer Amount" 
+              color="primary" 
+              variant="outlined" 
+            />
+          </Box>
 
-        {/* Offer Summary */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              Offer Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <Car className="h-4 w-4" />
-                  Vehicle Details
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Year:</span>
-                    <span className="font-medium">{vehicleDetails.year}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Make:</span>
-                    <span className="font-medium">{vehicleDetails.make}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Model:</span>
-                    <span className="font-medium">{vehicleDetails.model}</span>
-                  </div>
-                  {vehicleDetails.trim && (
-                    <div className="flex justify-between">
-                      <span>Trim:</span>
-                      <span className="font-medium">{vehicleDetails.trim}</span>
-                    </div>
-                  )}
-                  {vin && (
-                    <div className="flex justify-between">
-                      <span>VIN:</span>
-                      <span className="font-medium font-mono text-xs">
-                        {vin}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          <Divider sx={{ my: 4 }} />
 
-        {/* Seller Information Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-blue-600" />
-              Your Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Full Name *
-                  </Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={sellerInfo.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    required
-                  />
-                </div>
+          {/* Contact Form */}
+          <Box>
+            <Stack direction="row" spacing={1.5} alignItems="center" mb={3}>
+              <Person sx={{ color: "primary.main", fontSize: 28 }} />
+              <Typography variant="h5" fontWeight={600}>
+                Your Information
+              </Typography>
+            </Stack>
 
-                <div>
-                  <Label htmlFor="email" className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    Email Address *
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={sellerInfo.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    required
-                  />
-                </div>
+            <form onSubmit={handleSubmit}>
+              <Stack spacing={3}>
+                {/* Name Field */}
+                <TextField
+                  fullWidth
+                  label="Full Name"
+                  placeholder="Enter your full name"
+                  value={sellerInfo.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  required
+                  InputProps={{
+                    startAdornment: <Person sx={{ mr: 1.5, color: "action.active" }} />,
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                    },
+                  }}
+                />
 
-                <div>
-                  <Label htmlFor="phone" className="flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    Phone Number *
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="Enter your phone number"
-                    value={sellerInfo.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                    required
-                  />
-                </div>
+                {/* Email Field */}
+                <TextField
+                  fullWidth
+                  type="email"
+                  label="Email Address"
+                  placeholder="Enter your email"
+                  value={sellerInfo.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  required
+                  InputProps={{
+                    startAdornment: <Email sx={{ mr: 1.5, color: "action.active" }} />,
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                    },
+                  }}
+                />
 
-                {/* <div>
-                  <Label htmlFor="address" className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    Address (Optional)
-                  </Label>
-                  <Input
-                    id="address"
-                    type="text"
-                    placeholder="Enter your address"
-                    value={sellerInfo.address}
-                    onChange={(e) =>
-                      handleInputChange("address", e.target.value)
-                    }
-                  />
-                </div> */}
-              </div>
+                {/* Phone Field */}
+                <TextField
+                  fullWidth
+                  type="tel"
+                  label="Phone Number"
+                  placeholder="Enter your phone number"
+                  value={sellerInfo.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  required
+                  InputProps={{
+                    startAdornment: <Phone sx={{ mr: 1.5, color: "action.active" }} />,
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                    },
+                  }}
+                />
 
-              {submissionError && (
-                <Alert className="border-red-200 bg-red-50">
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-red-700">
+                {/* Error Alert */}
+                {submissionError && (
+                  <Alert severity="error" sx={{ borderRadius: 2 }}>
                     {submissionError}
-                  </AlertDescription>
-                </Alert>
-              )}
+                  </Alert>
+                )}
 
-              <div className="text-center">
+                {/* Submit Button */}
                 <Button
                   type="submit"
-                  size="lg"
+                  variant="contained"
+                  size="large"
                   disabled={isSubmitting}
-                  className="w-full md:w-auto min-w-48"
+                  fullWidth
+                  sx={{
+                    py: 1.5,
+                    borderRadius: 2,
+                    textTransform: "none",
+                    fontSize: "1.125rem",
+                    fontWeight: 600,
+                    mt: 2,
+                  }}
                 >
                   {isSubmitting ? (
                     <>
-                      <LoadingSpinner className="mr-2 h-4 w-4" />
-                      Submitting Offer...
+                      <CircularProgress size={24} sx={{ mr: 2 }} color="inherit" />
+                      Submitting...
                     </>
                   ) : (
-                    <>Get My ${pricing.currentPrice.toLocaleString()} Offer</>
+                    `Get My $${pricing.currentPrice.toLocaleString()} Offer`
                   )}
                 </Button>
-              </div>
 
-              <div className="text-center">
-                <p className="text-sm text-gray-600">
-                  By submitting this form, you agree to our terms and
-                  conditions. We'll send you a confirmation email with your
-                  quote details.
-                </p>
-              </div>
+                {/* Terms */}
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  textAlign="center"
+                  sx={{ pt: 1 }}
+                >
+                  By submitting, you agree to our terms and conditions. We'll send you a
+                  confirmation email with your quote details.
+                </Typography>
+              </Stack>
             </form>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </div>
+          </Box>
+        </Paper>
+      </Box>
+    </Container>
   );
 }

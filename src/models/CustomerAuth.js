@@ -12,7 +12,7 @@ const customerAuthSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-customerAuthSchema.index({ email: 1 }, { unique: true });
+// ✅ FIXED: Removed duplicate index - email already has unique: true in schema
 
 export default mongoose.models.CustomerAuth ||
   mongoose.model("CustomerAuth", customerAuthSchema);
