@@ -275,14 +275,14 @@ export default function MileageQuestion({
         )}
 
         {/* Expected Mileage Info */}
-        <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+        {/* <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
           <div className="text-sm text-blue-800 mb-1">
             Expected mileage for a {vehicleDetails.year} vehicle:
           </div>
           <div className="text-lg font-semibold text-blue-900">
             ~{getExpectedMileage()} miles
           </div>
-        </div>
+        </div> */}
 
         {/* Mileage Input */}
         <div className="space-y-4">
