@@ -47,7 +47,6 @@ export default function PriceModal({ isOpen, onClose, onCreateAccount, onLogin }
               <Card className="bg-green-50 border-2 border-green-200">
                 <CardContent className="p-6 text-center">
                   <div className="flex items-center justify-center mb-2">
-                    <DollarSign className="w-8 h-8 text-green-600 mr-2" />
                     <span className="text-4xl font-bold text-green-600">
                       ${pricing.currentPrice?.toLocaleString()}
                     </span>
