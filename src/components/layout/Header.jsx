@@ -407,7 +407,7 @@ const Header = () => {
                   />
                 </MenuItem>
 
-                <MenuItem
+                {/* <MenuItem
                   onClick={() => {
                     setUserMenuAnchor(null);
                     router.push("/account");
@@ -423,7 +423,7 @@ const Header = () => {
                       fontWeight: 500,
                     }}
                   />
-                </MenuItem>
+                </MenuItem> */}
 
                 <Divider sx={{ my: 1, borderColor: "#e0dfdc" }} />
 
