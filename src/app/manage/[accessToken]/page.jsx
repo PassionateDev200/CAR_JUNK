@@ -32,35 +32,36 @@ import { getQuoteByToken } from "@/lib/quoteApi";
 
 export default function QuoteManagementPage({ params }) {
   const router = useRouter();
-  const [accessToken, setAccessToken] = useState("");
+  const [accessToken, setAccessToken] = useState(null);
   const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(false);
 
-  // Resolve params Promise
+  // Mark component as mounted to prevent hydration mismatch
   useEffect(() => {
-    const resolveParams = async () => {
+    setMounted(true);
+  }, []);
+
+  // Combined effect to resolve params and fetch quote
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchData = async () => {
       try {
+        // Step 1: Resolve params
         const resolvedParams = await params;
-        setAccessToken(resolvedParams.accessToken);
-      } catch (err) {
-        console.error("Error resolving params:", err);
-        setError("Invalid access token");
-        setLoading(false);
-      }
-    };
+        const token = resolvedParams.accessToken;
+        
+        if (!isMounted) return;
+        
+        setAccessToken(token);
 
-    resolveParams();
-  }, [params]);
-
-  // Fetch quote data
-  useEffect(() => {
-    const fetchQuote = async () => {
-      if (!accessToken) return;
-
-      try {
-        const result = await getQuoteByToken(accessToken);
+        // Step 2: Fetch quote with resolved token
+        const result = await getQuoteByToken(token);
         console.log("manage/[accessToken] = Fetched quote:", result);
+
+        if (!isMounted) return;
 
         if (result.success) {
           setQuote(result.data.quote);
@@ -69,15 +70,23 @@ export default function QuoteManagementPage({ params }) {
           setError(result.error);
         }
       } catch (err) {
-        console.error("Error fetching quote:", err);
-        setError("Failed to load quote. Please try again.");
+        console.error("Error loading quote:", err);
+        if (isMounted) {
+          setError("Failed to load quote. Please try again.");
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchQuote();
-  }, [accessToken]);
+    fetchData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [params]);
 
   const getStatusConfig = (status) => {
     const configs = {
@@ -116,7 +125,8 @@ export default function QuoteManagementPage({ params }) {
     return configs[status] || configs.pending;
   };
 
-  if (loading) {
+  // Show loading state during SSR and initial client render
+  if (!mounted || loading) {
     return (
       <ThemeProvider theme={linkedinTheme}>
         <Box
@@ -140,7 +150,7 @@ export default function QuoteManagementPage({ params }) {
   if (error) {
     return (
       <ThemeProvider theme={linkedinTheme}>
-        <Box sx={{ minHeight: "100vh", bgcolor: "background.default", py: 6 }}>
+        <Box sx={{ minHeight: "100vh", bgcolor: "background.default", py: 30 }}>
           <Container maxWidth="sm">
             <Card>
               <CardContent sx={{ textAlign: "center", py: 6 }}>

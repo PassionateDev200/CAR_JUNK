@@ -11,11 +11,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { User, LogIn, Mail, Lock, X, Eye, EyeOff } from "lucide-react";
 import { useVehicle, useVehicleDispatch, vehicleActions } from "@/contexts/VehicleContext";
+import { useAuth } from "@/contexts/AuthContext";
 import axios from "@/lib/axios";
 
 export default function AccountModal({ isOpen, onClose, mode = "create", onSuccess }) {
   const vehicleState = useVehicle();
   const dispatch = useVehicleDispatch();
+  const { checkAuth } = useAuth(); // Get checkAuth from AuthContext
   
   const [formData, setFormData] = useState({
     email: "",
@@ -83,6 +85,9 @@ export default function AccountModal({ isOpen, onClose, mode = "create", onSucce
       });
 
       const data = resp.data;
+
+      // ✅ Update AuthContext to sync with Header
+      await checkAuth();
 
       // Persist to context
       dispatch(
