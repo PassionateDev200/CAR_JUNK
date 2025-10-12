@@ -3,22 +3,30 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import {
-  Search,
-  Car,
-  Lock,
-  Mail,
-  HelpCircle,
-  AlertCircle,
-  CheckCircle,
-} from "lucide-react";
+  Box,
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Divider,
+  Alert,
+  CircularProgress,
+  InputAdornment,
+  Stack,
+  Tabs,
+  Tab,
+} from "@mui/material";
+import {
+  VpnKey as VpnKeyIcon,
+  Email as EmailIcon,
+  Search as SearchIcon,
+  DirectionsCar as DirectionsCarIcon,
+  HelpOutline as HelpOutlineIcon,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon,
+} from "@mui/icons-material";
 import axios from "axios";
 import {
   validateAndNormalizeAccessToken,
@@ -30,15 +38,22 @@ import {
 
 export default function ManageQuotePage() {
   const router = useRouter();
+  const [tabValue, setTabValue] = useState(0);
+  
+  // Quick Access (Tab 0)
   const [accessToken, setAccessToken] = useState("");
+  const [tokenErrors, setTokenErrors] = useState([]);
+  
+  // Email Lookup (Tab 1)
   const [email, setEmail] = useState("");
   const [quoteId, setQuoteId] = useState("");
+  const [quoteIdErrors, setQuoteIdErrors] = useState([]);
+  
+  // Common states
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [tokenErrors, setTokenErrors] = useState([]);
-  const [quoteIdErrors, setQuoteIdErrors] = useState([]);
 
-  // 6-character token validation for direct access
+  // Handle Direct Access with 6-character token
   const handleDirectAccess = async (e) => {
     e.preventDefault();
 
@@ -67,7 +82,7 @@ export default function ManageQuotePage() {
     }
   };
 
-  // Email + quote ID lookup with validation
+  // Handle Email + Quote ID Lookup
   const handleEmailQuoteAccess = async (e) => {
     e.preventDefault();
     setError("");
@@ -128,7 +143,7 @@ export default function ManageQuotePage() {
     }
   };
 
-  // Handle access token input with real-time validation
+  // Handle Access Token Input
   const handleAccessTokenChange = (e) => {
     const input = e.target.value;
     const sanitized = sanitizeAccessToken(input);
@@ -137,7 +152,7 @@ export default function ManageQuotePage() {
     if (error && error.includes("access token")) setError("");
   };
 
-  // Handle Quote ID input with real-time validation
+  // Handle Quote ID Input
   const handleQuoteIdChange = (e) => {
     const input = e.target.value;
     const sanitized = sanitizeAccessToken(input);
@@ -146,147 +161,239 @@ export default function ManageQuotePage() {
     if (error && error.includes("Quote ID")) setError("");
   };
 
-  // Real-time validation feedback
+  // Validation Feedback Component
   const ValidationFeedback = ({ errors, isValid, value }) => {
     if (!value || value.length === 0) return null;
     return (
-      <div className="mt-2">
+      <Box sx={{ mt: 1 }}>
         {isValid ? (
-          <div className="flex items-center gap-2 text-green-600 text-sm">
-            <CheckCircle className="h-4 w-4" />
-            <span>Valid format</span>
-          </div>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <CheckCircleIcon sx={{ fontSize: 16, color: "#057642" }} />
+            <Typography variant="body2" sx={{ color: "#057642", fontSize: "0.813rem" }}>
+              Valid format
+            </Typography>
+          </Box>
         ) : (
-          <div className="space-y-1">
+          <Stack spacing={0.5}>
             {errors.map((error, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-2 text-red-600 text-sm"
-              >
-                <AlertCircle className="h-4 w-4" />
-                <span>{error}</span>
-              </div>
+              <Box key={index} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <ErrorIcon sx={{ fontSize: 16, color: "#dc2626" }} />
+                <Typography variant="body2" sx={{ color: "#dc2626", fontSize: "0.813rem" }}>
+                  {error}
+                </Typography>
+              </Box>
             ))}
-          </div>
+          </Stack>
         )}
-      </div>
+      </Box>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12">
-      <div className="container mx-auto px-4 max-w-2xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: "#f3f2ef",
+        py: { xs: 8, md: 12 },
+      }}
+    >
+      <Container maxWidth="md">
+        {/* Header */}
+        <Box sx={{ textAlign: "center", mb: 6 }}>
+          <DirectionsCarIcon sx={{ fontSize: 48, color: "#0a66c2", mb: 2 }} />
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 700,
+              color: "#000000",
+              mb: 1.5,
+              fontSize: { xs: "2rem", md: "2.5rem" },
+              letterSpacing: "-0.02em",
+            }}
+          >
+            Manage Your Quote
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              color: "#666666",
+              maxWidth: "600px",
+              mx: "auto",
+              lineHeight: 1.6,
+            }}
+          >
+            Access your quote to schedule pickup, cancel, or update your information.
+          </Typography>
+        </Box>
+
+        {/* Main Card */}
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: "#e0dfdc",
+            bgcolor: "#ffffff",
+            boxShadow: "0 0 0 1px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.08)",
+            overflow: "hidden",
+          }}
         >
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Car className="h-8 w-8 text-blue-600" />
-              <h1 className="text-3xl font-bold text-gray-800">
-                Manage Your Quote
-              </h1>
-            </div>
-            <p className="text-gray-600 max-w-md mx-auto">
-              Access your quote to cancel, reschedule pickup, or update your
-              information.
-            </p>
-          </div>
+          {/* Tabs */}
+          <Tabs
+            value={tabValue}
+            onChange={(e, newValue) => setTabValue(newValue)}
+            sx={{
+              borderBottom: "1px solid #e0dfdc",
+              px: 2,
+              "& .MuiTab-root": {
+                textTransform: "none",
+                fontSize: "1rem",
+                fontWeight: 600,
+                color: "#666666",
+                minHeight: 56,
+                "&.Mui-selected": {
+                  color: "#0a66c2",
+                },
+              },
+              "& .MuiTabs-indicator": {
+                bgcolor: "#0a66c2",
+                height: 3,
+              },
+            }}
+          >
+            <Tab icon={<VpnKeyIcon />} iconPosition="start" label="Quick Access" />
+            <Tab icon={<SearchIcon />} iconPosition="start" label="Find My Quote" />
+          </Tabs>
 
-          {/* Direct Access Token Method */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5 text-blue-600" />
-                Quick Access
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleDirectAccess} className="space-y-4">
-                <div>
-                  <Label htmlFor="accessToken">Access Token</Label>
-                  <Input
-                    id="accessToken"
-                    type="text"
-                    placeholder="Enter your 6-character access token (e.g., A7K9M2)"
-                    value={accessToken}
-                    onChange={handleAccessTokenChange}
-                    maxLength={VALIDATION_CONSTANTS.ACCESS_TOKEN_LENGTH}
-                    className={`font-mono text-lg tracking-wider ${
-                      accessToken.length > 0 &&
-                      validateAndNormalizeAccessToken(accessToken).isValid
-                        ? "border-green-500 focus:border-green-500"
-                        : accessToken.length > 0
-                        ? "border-red-500 focus:border-red-500"
-                        : ""
-                    }`}
-                  />
-                  <div className="flex justify-between items-center mt-1">
-                    <p className="text-sm text-gray-500">
-                      Found in your quote confirmation email (6 characters)
-                    </p>
-                    <span
-                      className={`text-xs ${
-                        accessToken.length ===
-                        VALIDATION_CONSTANTS.ACCESS_TOKEN_LENGTH
-                          ? "text-green-600"
-                          : accessToken.length >
-                            VALIDATION_CONSTANTS.ACCESS_TOKEN_LENGTH
-                          ? "text-red-600"
-                          : "text-gray-500"
-                      }`}
-                    >
-                      {accessToken.length}/
-                      {VALIDATION_CONSTANTS.ACCESS_TOKEN_LENGTH}
-                    </span>
-                  </div>
-                  <ValidationFeedback
-                    errors={tokenErrors}
-                    isValid={
-                      accessToken.length > 0 &&
-                      validateAndNormalizeAccessToken(accessToken).isValid
+          {/* Tab Panels */}
+          <Box sx={{ p: 4 }}>
+            {/* Tab 0: Quick Access */}
+            {tabValue === 0 && (
+              <form onSubmit={handleDirectAccess}>
+                <Stack spacing={3}>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: "#000000" }}>
+                      Access Token
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#666666", mb: 2 }}>
+                      Enter the 6-character access token from your confirmation email
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      placeholder="e.g., A7K9M2"
+                      value={accessToken}
+                      onChange={handleAccessTokenChange}
+                      inputProps={{ 
+                        maxLength: VALIDATION_CONSTANTS.ACCESS_TOKEN_LENGTH,
+                        style: { 
+                          fontFamily: "monospace", 
+                          fontSize: "1.125rem",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                        }
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <VpnKeyIcon sx={{ color: "#666666" }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      error={tokenErrors.length > 0}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2,
+                          bgcolor: "#f9fafb",
+                          "&:hover": {
+                            bgcolor: "#ffffff",
+                          },
+                          "&.Mui-focused": {
+                            bgcolor: "#ffffff",
+                          },
+                          "&.Mui-error": {
+                            "& fieldset": {
+                              borderColor: "#dc2626",
+                            },
+                          },
+                        },
+                      }}
+                    />
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1 }}>
+                      <Typography variant="caption" sx={{ color: "#666666" }}>
+                        6 characters (letters & numbers only)
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color:
+                            accessToken.length === VALIDATION_CONSTANTS.ACCESS_TOKEN_LENGTH
+                              ? "#057642"
+                              : accessToken.length > VALIDATION_CONSTANTS.ACCESS_TOKEN_LENGTH
+                              ? "#dc2626"
+                              : "#666666",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {accessToken.length}/{VALIDATION_CONSTANTS.ACCESS_TOKEN_LENGTH}
+                      </Typography>
+                    </Box>
+                    <ValidationFeedback
+                      errors={tokenErrors}
+                      isValid={
+                        accessToken.length > 0 &&
+                        validateAndNormalizeAccessToken(accessToken).isValid
+                      }
+                      value={accessToken}
+                    />
+                  </Box>
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    disabled={
+                      loading ||
+                      (accessToken.length > 0 &&
+                        !validateAndNormalizeAccessToken(accessToken).isValid)
                     }
-                    value={accessToken}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={
-                    loading ||
-                    (accessToken.length > 0 &&
-                      !validateAndNormalizeAccessToken(accessToken).isValid)
-                  }
-                >
-                  {loading ? "Accessing..." : "Access My Quote"}
-                </Button>
+                    sx={{
+                      bgcolor: "#0a66c2",
+                      py: 1.5,
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                      textTransform: "none",
+                      borderRadius: 2,
+                      "&:hover": {
+                        bgcolor: "#004182",
+                      },
+                      "&:disabled": {
+                        bgcolor: "#e0dfdc",
+                      },
+                    }}
+                  >
+                    {loading ? <CircularProgress size={24} color="inherit" /> : "Access My Quote"}
+                  </Button>
+                </Stack>
               </form>
-            </CardContent>
-          </Card>
+            )}
 
-          <div className="text-center mb-6">
-            <div className="flex items-center justify-center gap-4">
-              <div className="flex-1 h-px bg-gray-300"></div>
-              <span className="text-sm text-gray-500">OR</span>
-              <div className="flex-1 h-px bg-gray-300"></div>
-            </div>
-          </div>
+            {/* Tab 1: Find by Email */}
+            {tabValue === 1 && (
+              <form onSubmit={handleEmailQuoteAccess}>
+                <Stack spacing={3}>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: "#000000" }}>
+                      Email & Quote ID
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#666666", mb: 2 }}>
+                      Use your email and Quote ID to find your quote
+                    </Typography>
+                  </Box>
 
-          {/* Email + Quote ID Method */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-blue-600" />
-                Find My Quote
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleEmailQuoteAccess} className="space-y-4">
-                <div>
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
+                  {/* Email Field */}
+                  <TextField
+                    fullWidth
+                    label="Email Address"
                     type="email"
                     placeholder="Enter your email address"
                     value={email}
@@ -294,142 +401,273 @@ export default function ManageQuotePage() {
                       setEmail(e.target.value);
                       if (error && error.includes("email")) setError("");
                     }}
-                    className={
-                      email.length > 0 &&
-                      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-                        ? "border-green-500 focus:border-green-500"
-                        : email.length > 0
-                        ? "border-red-500 focus:border-red-500"
-                        : ""
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <EmailIcon sx={{ color: "#666666" }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
+                        bgcolor: "#f9fafb",
+                        "&:hover": {
+                          bgcolor: "#ffffff",
+                        },
+                        "&.Mui-focused": {
+                          bgcolor: "#ffffff",
+                        },
+                      },
+                    }}
+                  />
+
+                  {/* Quote ID Field */}
+                  <Box>
+                    <TextField
+                      fullWidth
+                      label="Quote ID"
+                      placeholder="e.g., X4B8N6"
+                      value={quoteId}
+                      onChange={handleQuoteIdChange}
+                      inputProps={{
+                        maxLength: VALIDATION_CONSTANTS.QUOTE_ID_LENGTH,
+                        style: {
+                          fontFamily: "monospace",
+                          fontSize: "1.125rem",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                        },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon sx={{ color: "#666666" }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      error={quoteIdErrors.length > 0}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2,
+                          bgcolor: "#f9fafb",
+                          "&:hover": {
+                            bgcolor: "#ffffff",
+                          },
+                          "&.Mui-focused": {
+                            bgcolor: "#ffffff",
+                          },
+                        },
+                      }}
+                    />
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1 }}>
+                      <Typography variant="caption" sx={{ color: "#666666" }}>
+                        6 characters from confirmation email
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color:
+                            quoteId.length === VALIDATION_CONSTANTS.QUOTE_ID_LENGTH
+                              ? "#057642"
+                              : quoteId.length > VALIDATION_CONSTANTS.QUOTE_ID_LENGTH
+                              ? "#dc2626"
+                              : "#666666",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {quoteId.length}/{VALIDATION_CONSTANTS.QUOTE_ID_LENGTH}
+                      </Typography>
+                    </Box>
+                    <ValidationFeedback
+                      errors={quoteIdErrors}
+                      isValid={
+                        quoteId.length > 0 && validateQuoteId(normalizeToken(quoteId))
+                      }
+                      value={quoteId}
+                    />
+                  </Box>
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    disabled={
+                      loading ||
+                      !email.trim() ||
+                      !quoteId.trim() ||
+                      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+                      !validateQuoteId(normalizeToken(quoteId))
                     }
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="quoteId">Quote ID</Label>
-                  <Input
-                    id="quoteId"
-                    type="text"
-                    placeholder="Enter your 6-character Quote ID (e.g., X4B8N6)"
-                    value={quoteId}
-                    onChange={handleQuoteIdChange}
-                    maxLength={VALIDATION_CONSTANTS.QUOTE_ID_LENGTH}
-                    className={`font-mono text-lg tracking-wider ${
-                      quoteId.length > 0 &&
-                      validateQuoteId(normalizeToken(quoteId))
-                        ? "border-green-500 focus:border-green-500"
-                        : quoteId.length > 0
-                        ? "border-red-500 focus:border-red-500"
-                        : ""
-                    }`}
-                  />
-                  <div className="flex justify-between items-center mt-1">
-                    <p className="text-sm text-gray-500">
-                      Found in your quote confirmation email (6 characters)
-                    </p>
-                    <span
-                      className={`text-xs ${
-                        quoteId.length === VALIDATION_CONSTANTS.QUOTE_ID_LENGTH
-                          ? "text-green-600"
-                          : quoteId.length >
-                            VALIDATION_CONSTANTS.QUOTE_ID_LENGTH
-                          ? "text-red-600"
-                          : "text-gray-500"
-                      }`}
-                    >
-                      {quoteId.length}/{VALIDATION_CONSTANTS.QUOTE_ID_LENGTH}
-                    </span>
-                  </div>
-                  <ValidationFeedback
-                    errors={quoteIdErrors}
-                    isValid={
-                      quoteId.length > 0 &&
-                      validateQuoteId(normalizeToken(quoteId))
-                    }
-                    value={quoteId}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={
-                    loading ||
-                    !email.trim() ||
-                    !quoteId.trim() ||
-                    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-                    !validateQuoteId(normalizeToken(quoteId))
-                  }
-                >
-                  {loading ? "Searching..." : "Find My Quote"}
-                </Button>
+                    sx={{
+                      bgcolor: "#0a66c2",
+                      py: 1.5,
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                      textTransform: "none",
+                      borderRadius: 2,
+                      "&:hover": {
+                        bgcolor: "#004182",
+                      },
+                      "&:disabled": {
+                        bgcolor: "#e0dfdc",
+                      },
+                    }}
+                  >
+                    {loading ? <CircularProgress size={24} color="inherit" /> : "Find My Quote"}
+                  </Button>
+                </Stack>
               </form>
-            </CardContent>
-          </Card>
+            )}
 
-          {error && (
-            <Alert className="border-red-200 bg-red-50 mb-6">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-700">
+            {/* Error Alert */}
+            {error && (
+              <Alert
+                severity="error"
+                sx={{
+                  mt: 3,
+                  borderRadius: 2,
+                  border: "1px solid #fecaca",
+                  bgcolor: "#fef2f2",
+                }}
+                onClose={() => setError("")}
+              >
                 {error}
-              </AlertDescription>
-            </Alert>
-          )}
+              </Alert>
+            )}
+          </Box>
+        </Paper>
 
-          {/* Help Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <HelpCircle className="h-5 w-5 text-blue-600" />
+        {/* Help Section */}
+        <Paper
+          elevation={0}
+          sx={{
+            mt: 4,
+            p: 4,
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: "#e0dfdc",
+            bgcolor: "#ffffff",
+          }}
+        >
+          <Stack direction="row" spacing={2} alignItems="flex-start" mb={3}>
+            <HelpOutlineIcon sx={{ fontSize: 28, color: "#0a66c2", mt: 0.5 }} />
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: "#000000" }}>
                 Need Help?
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="text-sm">
-                <p className="font-medium text-gray-700 mb-2">
-                  Can't find your access information?
-                </p>
-                <ul className="text-gray-600 space-y-1 list-disc list-inside">
-                  <li>Check your email for the quote confirmation</li>
-                  <li>
-                    Look for the subject line starting with "Your Cash Offer"
-                  </li>
-                  <li>The 6-character access token is in the email body</li>
-                  <li>
-                    Quote ID is also 6 characters (letters and numbers only)
-                  </li>
-                </ul>
-              </div>
-              <Separator />
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-800 mb-2">
-                  Format Examples:
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-blue-700">Access Token:</span>
-                    <span className="font-mono bg-white px-2 py-1 rounded text-blue-800">
-                      A7K9M2
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-blue-700">Quote ID:</span>
-                    <span className="font-mono bg-white px-2 py-1 rounded text-blue-800">
-                      X4B8N6
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-600 mb-2">
-                  Still need assistance?
-                </p>
-                <Button variant="outline" size="sm">
-                  Contact Support
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-    </div>
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#666666", lineHeight: 1.6 }}>
+                Can't find your access information? Here's what to do:
+              </Typography>
+            </Box>
+          </Stack>
+
+          <Stack spacing={2} sx={{ mb: 3 }}>
+            <Box sx={{ pl: 2 }}>
+              <Typography variant="body2" sx={{ color: "#000000", mb: 0.5 }}>
+                • Check your email for the quote confirmation
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#000000", mb: 0.5 }}>
+                • Look for subject line: "Your Cash Offer from PNW Cash For Cars"
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#000000", mb: 0.5 }}>
+                • The 6-character access token is in the email body
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#000000" }}>
+                • Quote ID is also 6 characters (letters and numbers only)
+              </Typography>
+            </Box>
+          </Stack>
+
+          <Divider sx={{ my: 3, borderColor: "#e0dfdc" }} />
+
+          {/* Format Examples */}
+          <Paper
+            elevation={0}
+            sx={{
+              bgcolor: "#edf3f8",
+              border: "1px solid #b9d6f2",
+              borderRadius: 2,
+              p: 3,
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: "#0a66c2" }}>
+              Format Examples:
+            </Typography>
+            <Stack spacing={1.5}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="body2" sx={{ color: "#000000", fontWeight: 500 }}>
+                  Access Token:
+                </Typography>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    bgcolor: "#ffffff",
+                    px: 2,
+                    py: 1,
+                    borderRadius: 1,
+                    fontFamily: "monospace",
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    color: "#0a66c2",
+                    letterSpacing: "0.1em",
+                  }}
+                >
+                  A7K9M2
+                </Paper>
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="body2" sx={{ color: "#000000", fontWeight: 500 }}>
+                  Quote ID:
+                </Typography>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    bgcolor: "#ffffff",
+                    px: 2,
+                    py: 1,
+                    borderRadius: 1,
+                    fontFamily: "monospace",
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    color: "#0a66c2",
+                    letterSpacing: "0.1em",
+                  }}
+                >
+                  X4B8N6
+                </Paper>
+              </Box>
+            </Stack>
+          </Paper>
+
+          <Divider sx={{ my: 3, borderColor: "#e0dfdc" }} />
+
+          {/* Contact Support */}
+          <Box sx={{ textAlign: "center" }}>
+            <Typography variant="body2" sx={{ color: "#666666", mb: 2 }}>
+              Still need assistance?
+            </Typography>
+            <Button
+              variant="outlined"
+              size="small"
+              href="/contact"
+              sx={{
+                borderColor: "#e0dfdc",
+                color: "#0a66c2",
+                textTransform: "none",
+                fontWeight: 600,
+                borderRadius: 2,
+                "&:hover": {
+                  borderColor: "#0a66c2",
+                  bgcolor: "#edf3f8",
+                },
+              }}
+            >
+              Contact Support
+            </Button>
+          </Box>
+        </Paper>
+      </Container>
+    </Box>
   );
 }
