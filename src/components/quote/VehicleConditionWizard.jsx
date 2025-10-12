@@ -43,6 +43,7 @@ import {
   useVehicleDispatch,
   vehicleActions,
 } from "@/contexts/VehicleContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Individual Question Components
 import ZipCodeQuestion from "./questions/ZipCodeQuestion";
@@ -199,6 +200,7 @@ export default function VehicleConditionWizard({ onComplete }) {
   // Get state and dispatch from context
   const vehicleState = useVehicle();
   const dispatch = useVehicleDispatch();
+  const { isAuthenticated } = useAuth(); // Check if user is already logged in
 
   const {
     vehicleDetails,
@@ -354,14 +356,28 @@ export default function VehicleConditionWizard({ onComplete }) {
     if (currentQuestionIndex < CONDITION_STEPS.length - 1) {
       dispatch(vehicleActions.setCurrentQuestion(currentQuestionIndex + 1));
     } else {
-      // ✅ NEW: Show PriceModal instead of going directly to PricingDisplay
-      console.log("🎉 All questions completed! Showing price modal...");
-
       // Mark step as completed first
       dispatch(vehicleActions.markStepCompleted(2));
 
-      // Show the price modal with authentication options
-      setShowPriceModal(true);
+      // ✅ Check if user is already authenticated
+      if (isAuthenticated) {
+        console.log("🎉 All questions completed! User already authenticated, skipping to PricingDisplay...");
+        
+        // Skip authentication modals, go directly to PricingDisplay
+        const completionData = {
+          conditionAssessmentComplete: true,
+          totalQuestionsAnswered: Object.keys(conditionAnswers).filter(
+            (key) => conditionAnswers[key] !== null
+          ).length,
+          finalPricing: pricing.currentPrice,
+        };
+        onComplete(completionData);
+      } else {
+        console.log("🎉 All questions completed! Showing price modal for authentication...");
+        
+        // Show the price modal with authentication options
+        setShowPriceModal(true);
+      }
     }
   };
 
@@ -389,13 +405,28 @@ export default function VehicleConditionWizard({ onComplete }) {
     if (currentQuestionIndex < CONDITION_STEPS.length - 1) {
       dispatch(vehicleActions.setCurrentQuestion(currentQuestionIndex + 1));
     } else {
-      // ✅ NEW: Show PriceModal after sub-question completion
-      console.log("🎉 Last question with sub-question completed! Showing price modal...");
-
+      // Mark step as completed first
       dispatch(vehicleActions.markStepCompleted(2));
 
-      // Show the price modal with authentication options
-      setShowPriceModal(true);
+      // ✅ Check if user is already authenticated
+      if (isAuthenticated) {
+        console.log("🎉 Last question with sub-question completed! User already authenticated, skipping to PricingDisplay...");
+        
+        // Skip authentication modals, go directly to PricingDisplay
+        const completionData = {
+          conditionAssessmentComplete: true,
+          totalQuestionsAnswered: Object.keys(conditionAnswers).filter(
+            (key) => conditionAnswers[key] !== null
+          ).length,
+          finalPricing: pricing.currentPrice,
+        };
+        onComplete(completionData);
+      } else {
+        console.log("🎉 Last question with sub-question completed! Showing price modal for authentication...");
+        
+        // Show the price modal with authentication options
+        setShowPriceModal(true);
+      }
     }
   };
 
