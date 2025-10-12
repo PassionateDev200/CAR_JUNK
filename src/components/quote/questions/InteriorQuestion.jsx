@@ -2,10 +2,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import {
+  Box,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  Paper,
+  Typography,
+  Stack,
+} from "@mui/material";
 import { Armchair } from "lucide-react";
+import QuestionLayout from "./QuestionLayout";
+import { questionTheme } from "@/theme/questionTheme";
 
 export default function InteriorQuestion({
   vehicleDetails,
@@ -26,31 +34,26 @@ export default function InteriorQuestion({
       value: "good_condition",
       label: "No, all interior parts are there and in good condition",
       priceAdjustment: {
-        type: "interior", // Updated to match question ID
+        type: "interior",
         amount: 0,
       },
       description:
         "Seats, dashboard, and interior components are intact and functional",
-      impact: "No adjustment needed",
-      severity: "good",
     },
     {
       value: "damaged_missing",
       label: "Yes, some interior parts are damaged or missing",
       priceAdjustment: {
-        type: "interior", // Updated to match question ID
+        type: "interior",
         amount: -75,
       },
       description:
         "Interior has significant damage, missing parts, or major wear",
-      impact: "-$75 adjustment",
-      severity: "moderate",
     },
   ];
 
-  const handleSelection = (value) => {
-    setSelectedValue(value);
-    // Don't call onAnswer immediately - wait for Next button
+  const handleSelection = (event) => {
+    setSelectedValue(event.target.value);
   };
 
   const handleNext = () => {
@@ -68,76 +71,82 @@ export default function InteriorQuestion({
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader className="text-center pb-6">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Armchair className="h-6 w-6 text-blue-600" />
-          <CardTitle className="text-xl text-gray-800">
-            Are any interior parts of your {getVehicleDisplayName()} damaged or
-            missing?
-          </CardTitle>
-        </div>
-        <p className="text-sm text-gray-600 max-w-md mx-auto">
-          Think about the seats, airbags, and dashboard. Don't worry about small
-          scratches or spots. We just need to know if there are any serious rips
-          or tears.
-        </p>
-        <p className="text-xs text-gray-500 mt-2">
-          Question {questionNumber} of {totalQuestions}
-        </p>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
-        {options.map((option) => (
-          <div key={option.value} className="space-y-2">
-            <Label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-              <input
-                type="radio"
-                name="interior"
-                value={option.value}
-                checked={selectedValue === option.value}
-                onChange={() => handleSelection(option.value)}
-                className="w-4 h-4 text-blue-600"
-              />
-              <div className="flex-1">
-                <div className="font-medium text-gray-900">{option.label}</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  {option.description}
-                  {/* {option.priceAdjustment && (
-                    <div
-                      className={`text-xs mt-1 ${
-                        option.priceAdjustment.amount === 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      Price Impact: {option.impact}
-                    </div>
-                  )} */}
-                </div>
-              </div>
-            </Label>
-          </div>
-        ))}
-
-        <div className="flex justify-between pt-6">
-          {onPrevious ? (
-            <Button variant="outline" onClick={onPrevious}>
-              Previous
-            </Button>
-          ) : (
-            <div></div>
-          )}
-
-          <Button
-            onClick={handleNext}
-            disabled={!selectedValue}
-            className="min-w-24"
-          >
-            Next
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <QuestionLayout
+      icon={Armchair}
+      title={`Are any interior parts of your ${getVehicleDisplayName()} damaged or missing?`}
+      description="Think about the seats, airbags, and dashboard. Don't worry about small scratches or spots. We just need to know if there are any serious rips or tears."
+      questionNumber={questionNumber}
+      totalQuestions={totalQuestions}
+      onPrevious={onPrevious}
+      onNext={handleNext}
+      nextDisabled={!selectedValue}
+    >
+      <Box sx={{ maxWidth: "700px", mx: "auto" }}>
+        <RadioGroup value={selectedValue} onChange={handleSelection}>
+          <Stack spacing={2}>
+            {options.map((option) => (
+              <Paper
+                key={option.value}
+                elevation={0}
+                sx={{
+                  p: 0,
+                  border: "2px solid",
+                  borderColor:
+                    selectedValue === option.value
+                      ? questionTheme.colors.primary.main
+                      : questionTheme.colors.border.primary,
+                  borderRadius: 2,
+                  cursor: "pointer",
+                  transition: questionTheme.transitions.default,
+                  "&:hover": {
+                    borderColor: questionTheme.colors.border.focus,
+                    bgcolor: questionTheme.colors.background.hover,
+                  },
+                }}
+              >
+                <FormControlLabel
+                  value={option.value}
+                  control={
+                    <Radio
+                      sx={{
+                        ml: 2,
+                        color: questionTheme.colors.border.primary,
+                        "&.Mui-checked": {
+                          color: questionTheme.colors.primary.main,
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Box sx={{ py: 1.5, pr: 2 }}>
+                      <Typography
+                        sx={{
+                          fontSize: questionTheme.typography.sizes.md,
+                          fontWeight: questionTheme.typography.weights.semibold,
+                          color: questionTheme.colors.text.primary,
+                          mb: 0.5,
+                        }}
+                      >
+                        {option.label}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: questionTheme.typography.sizes.sm,
+                          color: questionTheme.colors.text.secondary,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {option.description}
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{ m: 0, width: "100%" }}
+                />
+              </Paper>
+            ))}
+          </Stack>
+        </RadioGroup>
+      </Box>
+    </QuestionLayout>
   );
 }

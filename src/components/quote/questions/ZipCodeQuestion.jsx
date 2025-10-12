@@ -1,14 +1,20 @@
 /** route: src/components/quote/questions/ZipCodeQuestion.jsx */
 "use client";
+
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import {
+  Box,
+  TextField,
+  Typography,
+  Paper,
+  Stack,
+  CircularProgress,
+  Alert,
+} from "@mui/material";
+import { MapPin, CheckCircle, AlertCircle } from "lucide-react";
+import QuestionLayout from "./QuestionLayout";
+import { questionTheme } from "@/theme/questionTheme";
 import { validateZipCode, getRegionAdjustment } from "@/utils/zipCodeApi";
-import { useVehicle } from "@/contexts/VehicleContext";
 
 export default function ZipCodeQuestion({
   vehicleDetails,
@@ -18,7 +24,6 @@ export default function ZipCodeQuestion({
   questionNumber,
   totalQuestions,
 }) {
-  const vehicleState = useVehicle();
   const [zipCode, setZipCode] = useState(currentAnswer?.zipCode || "");
   const [locationData, setLocationData] = useState(
     currentAnswer?.locationData || null
@@ -106,108 +111,142 @@ export default function ZipCodeQuestion({
   };
 
   return (
-    <div className="space-y-6">
-      <CardHeader className="text-center">
-        <CardTitle className="flex items-center justify-center gap-2 text-xl">
-          <MapPin className="h-6 w-6 text-blue-600" />
-          Where will we pick up your {getVehicleDisplayName()}?
-        </CardTitle>
-        <p className="text-sm text-gray-600 mb-4">
-          Enter the ZIP code where your {vehicleDetails.make || "vehicle"} will
-          be parked when we come to get it
-        </p>
-        <p className="text-xs text-gray-500">
-          (This info helps us determine the offer amount.)
-        </p>
-        <p className="text-sm text-gray-600">
-          Question {questionNumber} of {totalQuestions}
-        </p>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        <div className="max-w-md mx-auto space-y-4">
-          <div>
-            <Label htmlFor="zipcode" className="text-sm font-medium">
-              ZIP Code
-            </Label>
-            <div className="relative">
-              <Input
-                id="zipcode"
-                type="text"
-                value={zipCode}
-                onChange={handleZipChange}
-                placeholder="Enter 5-digit ZIP code"
-                className={`text-lg p-4 text-center pr-12 ${
-                  error
-                    ? "border-red-500"
-                    : locationData?.valid
-                    ? "border-green-500"
-                    : ""
-                }`}
-                maxLength={5}
-              />
-
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                {isValidating && (
-                  <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-                )}
-                {!isValidating && locationData?.valid && (
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                )}
-                {!isValidating && error && (
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                )}
-              </div>
-            </div>
-
-            {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
-          </div>
-
-          {locationData?.valid && (
-            <Alert className="border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-700">
-                <div className="font-medium">
-                  {locationData.city}, {locationData.state}
-                </div>
-                <div className="text-sm">
-                  {locationData.county} • {locationData.timezone}
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="flex justify-between items-center">
-            {onPrevious && (
-              <Button variant="outline" onClick={onPrevious}>
-                Previous
-              </Button>
-            )}
-
-            <Button
-              onClick={handleSubmit}
-              disabled={
-                !zipCode ||
-                zipCode.length !== 5 ||
-                !locationData?.valid ||
-                isValidating
-              }
-              className={`${
-                !onPrevious ? "mx-auto" : "ml-auto"
-              } bg-blue-600 hover:bg-blue-700`}
+    <QuestionLayout
+      icon={MapPin}
+      title={`Where will we pick up your ${getVehicleDisplayName()}?`}
+      description={`Enter the ZIP code where your ${
+        vehicleDetails.make || "vehicle"
+      } will be parked when we come to get it. This info helps us determine the offer amount.`}
+      questionNumber={questionNumber}
+      totalQuestions={totalQuestions}
+      onPrevious={onPrevious}
+      onNext={handleSubmit}
+      nextDisabled={
+        !zipCode ||
+        zipCode.length !== 5 ||
+        !locationData?.valid ||
+        isValidating
+      }
+      nextLabel={isValidating ? "Validating..." : "Continue"}
+    >
+      <Box sx={{ maxWidth: "500px", mx: "auto" }}>
+        <Stack spacing={3}>
+          {/* ZIP Code Input */}
+          <Box>
+            <Typography
+              sx={{
+                fontSize: questionTheme.typography.sizes.sm,
+                fontWeight: questionTheme.typography.weights.semibold,
+                color: questionTheme.colors.text.primary,
+                mb: 1.5,
+              }}
             >
-              {isValidating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Validating...
-                </>
-              ) : (
-                "Continue"
-              )}
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </div>
+              ZIP Code
+            </Typography>
+            <TextField
+              fullWidth
+              value={zipCode}
+              onChange={handleZipChange}
+              placeholder="Enter 5-digit ZIP code"
+              error={!!error}
+              inputProps={{
+                maxLength: 5,
+                style: {
+                  fontSize: "1.125rem",
+                  textAlign: "center",
+                  letterSpacing: "0.1em",
+                },
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  bgcolor: questionTheme.colors.background.primary,
+                  "& fieldset": {
+                    borderColor: error
+                      ? questionTheme.colors.error.main
+                      : locationData?.valid
+                      ? questionTheme.colors.success.main
+                      : questionTheme.colors.border.primary,
+                    borderWidth: 2,
+                  },
+                  "&:hover fieldset": {
+                    borderColor: error
+                      ? questionTheme.colors.error.main
+                      : locationData?.valid
+                      ? questionTheme.colors.success.main
+                      : questionTheme.colors.border.focus,
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: error
+                      ? questionTheme.colors.error.main
+                      : questionTheme.colors.primary.main,
+                  },
+                },
+              }}
+              InputProps={{
+                endAdornment: (
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    {isValidating && <CircularProgress size={20} />}
+                    {!isValidating && locationData?.valid && (
+                      <CheckCircle size={20} color="#057642" />
+                    )}
+                    {!isValidating && error && (
+                      <AlertCircle size={20} color="#d32f2f" />
+                    )}
+                  </Box>
+                ),
+              }}
+            />
+            {error && (
+              <Typography
+                sx={{
+                  mt: 1,
+                  fontSize: questionTheme.typography.sizes.sm,
+                  color: questionTheme.colors.error.main,
+                }}
+              >
+                {error}
+              </Typography>
+            )}
+          </Box>
+
+          {/* Location Display */}
+          {locationData?.valid && (
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2.5,
+                borderRadius: 2,
+                border: "1.5px solid",
+                borderColor: questionTheme.colors.success.main,
+                bgcolor: questionTheme.colors.success.light,
+              }}
+            >
+              <Stack direction="row" spacing={1.5} alignItems="center" mb={1}>
+                <CheckCircle size={20} color="#057642" />
+                <Typography
+                  sx={{
+                    fontSize: questionTheme.typography.sizes.md,
+                    fontWeight: questionTheme.typography.weights.semibold,
+                    color: questionTheme.colors.success.main,
+                  }}
+                >
+                  {locationData.city}, {locationData.state}
+                </Typography>
+              </Stack>
+              <Typography
+                sx={{
+                  fontSize: questionTheme.typography.sizes.sm,
+                  color: questionTheme.colors.text.secondary,
+                  ml: 4.5,
+                }}
+              >
+                {locationData.county} • {locationData.timezone}
+              </Typography>
+            </Paper>
+          )}
+        </Stack>
+      </Box>
+    </QuestionLayout>
   );
 }

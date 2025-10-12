@@ -2,10 +2,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import {
+  Box,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  Paper,
+  Typography,
+  Stack,
+} from "@mui/material";
 import { Zap } from "lucide-react";
+import QuestionLayout from "./QuestionLayout";
+import { questionTheme } from "@/theme/questionTheme";
 
 export default function CatalyticConverterQuestion({
   vehicleDetails,
@@ -26,29 +34,24 @@ export default function CatalyticConverterQuestion({
       value: "attached",
       label: "Yes, it's attached",
       priceAdjustment: {
-        type: "catalytic_converter", // Updated to match question ID
+        type: "catalytic_converter",
         amount: 0,
       },
       description: "Catalytic converter is present and properly attached",
-      impact: "No adjustment needed",
-      severity: "good",
     },
     {
       value: "missing",
       label: "No, it's missing",
       priceAdjustment: {
-        type: "catalytic_converter", // Updated to match question ID
+        type: "catalytic_converter",
         amount: -150,
       },
       description: "Catalytic converter has been removed or stolen",
-      impact: "-$150 adjustment",
-      severity: "moderate",
     },
   ];
 
-  const handleSelection = (value) => {
-    setSelectedValue(value);
-    // Don't call onAnswer immediately - wait for Next button
+  const handleSelection = (event) => {
+    setSelectedValue(event.target.value);
   };
 
   const handleNext = () => {
@@ -66,77 +69,82 @@ export default function CatalyticConverterQuestion({
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader className="text-center pb-6">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Zap className="h-6 w-6 text-blue-600" />
-          <CardTitle className="text-xl text-gray-800">
-            Is the catalytic converter attached to your{" "}
-            {getVehicleDisplayName()}?
-          </CardTitle>
-        </div>
-        <p className="text-sm text-gray-600 max-w-md mx-auto">
-          You'll know it's missing if your car makes a loud roar when you start
-          it and gets louder as you accelerate. You might also notice an
-          increase in exhaust fumes. Finally, you can check for missing parts
-          under the car, around the muffler.
-        </p>
-        <p className="text-xs text-gray-500 mt-2">
-          Question {questionNumber} of {totalQuestions}
-        </p>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
-        {options.map((option) => (
-          <div key={option.value} className="space-y-2">
-            <Label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-              <input
-                type="radio"
-                name="catalytic_converter"
-                value={option.value}
-                checked={selectedValue === option.value}
-                onChange={() => handleSelection(option.value)}
-                className="w-4 h-4 text-blue-600"
-              />
-              <div className="flex-1">
-                <div className="font-medium text-gray-900">{option.label}</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  {option.description}
-                  {/* {option.priceAdjustment && (
-                    <div
-                      className={`text-xs mt-1 ${
-                        option.priceAdjustment.amount === 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      Price Impact: {option.impact}
-                    </div>
-                  )} */}
-                </div>
-              </div>
-            </Label>
-          </div>
-        ))}
-
-        <div className="flex justify-between pt-6">
-          {onPrevious ? (
-            <Button variant="outline" onClick={onPrevious}>
-              Previous
-            </Button>
-          ) : (
-            <div></div>
-          )}
-
-          <Button
-            onClick={handleNext}
-            disabled={!selectedValue}
-            className="min-w-24"
-          >
-            Next
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <QuestionLayout
+      icon={Zap}
+      title={`Is the catalytic converter attached to your ${getVehicleDisplayName()}?`}
+      description="You'll know it's missing if your car makes a loud roar when you start it and gets louder as you accelerate. You might also notice an increase in exhaust fumes. Finally, you can check for missing parts under the car, around the muffler."
+      questionNumber={questionNumber}
+      totalQuestions={totalQuestions}
+      onPrevious={onPrevious}
+      onNext={handleNext}
+      nextDisabled={!selectedValue}
+    >
+      <Box sx={{ maxWidth: "700px", mx: "auto" }}>
+        <RadioGroup value={selectedValue} onChange={handleSelection}>
+          <Stack spacing={2}>
+            {options.map((option) => (
+              <Paper
+                key={option.value}
+                elevation={0}
+                sx={{
+                  p: 0,
+                  border: "2px solid",
+                  borderColor:
+                    selectedValue === option.value
+                      ? questionTheme.colors.primary.main
+                      : questionTheme.colors.border.primary,
+                  borderRadius: 2,
+                  cursor: "pointer",
+                  transition: questionTheme.transitions.default,
+                  "&:hover": {
+                    borderColor: questionTheme.colors.border.focus,
+                    bgcolor: questionTheme.colors.background.hover,
+                  },
+                }}
+              >
+                <FormControlLabel
+                  value={option.value}
+                  control={
+                    <Radio
+                      sx={{
+                        ml: 2,
+                        color: questionTheme.colors.border.primary,
+                        "&.Mui-checked": {
+                          color: questionTheme.colors.primary.main,
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Box sx={{ py: 1.5, pr: 2 }}>
+                      <Typography
+                        sx={{
+                          fontSize: questionTheme.typography.sizes.md,
+                          fontWeight: questionTheme.typography.weights.semibold,
+                          color: questionTheme.colors.text.primary,
+                          mb: 0.5,
+                        }}
+                      >
+                        {option.label}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: questionTheme.typography.sizes.sm,
+                          color: questionTheme.colors.text.secondary,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {option.description}
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{ m: 0, width: "100%" }}
+                />
+              </Paper>
+            ))}
+          </Stack>
+        </RadioGroup>
+      </Box>
+    </QuestionLayout>
   );
 }

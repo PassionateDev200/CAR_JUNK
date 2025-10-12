@@ -3,15 +3,20 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
+  Box,
+  Paper,
+  Button,
+  Alert,
+  AlertTitle,
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+  DialogActions,
+  Typography,
+  Stack,
+  Chip,
+} from "@mui/material";
 import {
   CheckCircle,
   ArrowRight,
@@ -491,40 +496,7 @@ export default function VehicleConditionWizard({ onComplete }) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Progress Header - Hidden by default to match original style */}
-      <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-xl border-0 hidden">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">
-                Vehicle Condition Assessment
-              </h2>
-              <p className="text-blue-100">
-                Help us determine the most accurate offer for your{" "}
-                {vehicleDetails.year} {vehicleDetails.make}{" "}
-                {vehicleDetails.model}
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold">
-                {currentQuestionIndex + 1}
-              </div>
-              <div className="text-sm text-blue-100">of {totalSteps}</div>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="mt-4 bg-blue-500/30 rounded-full h-2">
-            <div
-              className="bg-white rounded-full h-2 transition-all duration-300"
-              style={{
-                width: `${((currentQuestionIndex + 1) / totalSteps) * 100}%`,
-              }}
-            />
-          </div>
-        </CardContent>
-      </Card>
+    <Box sx={{ width: "100%" }}>
 
       {/* Main Question Card */}
       <AnimatePresence mode="wait">
@@ -536,25 +508,21 @@ export default function VehicleConditionWizard({ onComplete }) {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="shadow-xl border-0 bg-white">
-              <CardContent className="p-8">
-                {console.log(
-                  "VehicleConditionWizard == vehicleDetails ==>",
-                  vehicleDetails
-                )}
-                <CurrentQuestionComponent
-                  vehicleDetails={vehicleDetails}
-                  vin={vin}
-                  currentAnswer={conditionAnswers[currentStep.id]} // PERSISTS FROM CONTEXT!
-                  onAnswer={(answer, pricing) =>
-                    handleAnswer(currentStep.id, answer, pricing)
-                  }
-                  onPrevious={currentQuestionIndex > 0 ? handlePrevious : null}
-                  questionNumber={currentQuestionIndex + 1}
-                  totalQuestions={totalSteps}
-                />
-              </CardContent>
-            </Card>
+            {console.log(
+              "VehicleConditionWizard == vehicleDetails ==>",
+              vehicleDetails
+            )}
+            <CurrentQuestionComponent
+              vehicleDetails={vehicleDetails}
+              vin={vin}
+              currentAnswer={conditionAnswers[currentStep.id]}
+              onAnswer={(answer, pricing) =>
+                handleAnswer(currentStep.id, answer, pricing)
+              }
+              onPrevious={currentQuestionIndex > 0 ? handlePrevious : null}
+              questionNumber={currentQuestionIndex + 1}
+              totalQuestions={totalSteps}
+            />
           </motion.div>
         ) : (
           <motion.div
@@ -564,53 +532,121 @@ export default function VehicleConditionWizard({ onComplete }) {
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="shadow-xl border-0 bg-white">
-              <CardContent className="p-8">
-                <VehicleQuadrantSelector
-                  title={subQuestionData.title}
-                  onSelectionComplete={handleSubQuestionComplete}
-                  vehicleDetails={vehicleDetails}
-                  questionNumber={currentQuestionIndex + 1}
-                  totalQuestions={totalSteps}
-                />
-              </CardContent>
-            </Card>
+            <VehicleQuadrantSelector
+              title={subQuestionData.title}
+              onSelectionComplete={handleSubQuestionComplete}
+              vehicleDetails={vehicleDetails}
+              questionNumber={currentQuestionIndex + 1}
+              totalQuestions={totalSteps}
+            />
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Step Navigation Sidebar */}
-      <Card className="bg-white/90 backdrop-blur-sm shadow-lg border-0">
-        <CardContent className="p-4">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Progress</h3>
-          <div className="grid grid-cols-4 gap-2">
+      <Box sx={{ mt: 3 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2.5,
+            borderRadius: 2,
+            border: "1px solid #e0dfdc",
+            bgcolor: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(8px)",
+            boxShadow: "0 0 0 1px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.08)",
+          }}
+        >
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontSize: "0.875rem",
+              fontWeight: 600,
+              color: "#666666",
+              mb: 2,
+            }}
+          >
+            Progress
+          </Typography>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: 1,
+            }}
+          >
             {CONDITION_STEPS.map((step, index) => {
               const status = getStepStatus(index);
               const IconComponent = step.icon;
 
               return (
-                <button
+                <Box
                   key={step.id}
+                  component="button"
                   onClick={() => jumpToStep(index)}
                   disabled={
                     status === "pending" && index > currentQuestionIndex
                   }
-                  className={`p-2 rounded-lg transition-all text-xs ${
-                    status === "completed"
-                      ? "bg-green-100 text-green-700 hover:bg-green-200"
-                      : status === "current"
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  }`}
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    border: "1px solid",
+                    borderColor:
+                      status === "completed"
+                        ? "#057642"
+                        : status === "current"
+                        ? "#0a66c2"
+                        : "#e0dfdc",
+                    bgcolor:
+                      status === "completed"
+                        ? "#f0f9f6"
+                        : status === "current"
+                        ? "#edf3f8"
+                        : "#f9fafb",
+                    color:
+                      status === "completed"
+                        ? "#057642"
+                        : status === "current"
+                        ? "#0a66c2"
+                        : "#9ca3af",
+                    cursor:
+                      status === "pending" && index > currentQuestionIndex
+                        ? "not-allowed"
+                        : "pointer",
+                    transition: "all 0.2s ease",
+                    "&:hover:not(:disabled)": {
+                      bgcolor:
+                        status === "completed"
+                          ? "#e6f7f0"
+                          : status === "current"
+                          ? "#e3f0ff"
+                          : "#f3f4f6",
+                    },
+                    "&:disabled": {
+                      opacity: 0.5,
+                    },
+                  }}
                 >
-                  <IconComponent className="h-4 w-4 mx-auto mb-1" />
-                  <div className="truncate">{step.label}</div>
-                </button>
+                  <IconComponent
+                    size={16}
+                    style={{ display: "block", margin: "0 auto 4px" }}
+                  />
+                  <Typography
+                    sx={{
+                      fontSize: "0.688rem",
+                      fontWeight: 500,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {step.label}
+                  </Typography>
+                </Box>
               );
             })}
-          </div>
-        </CardContent>
-      </Card>
+          </Box>
+        </Paper>
+      </Box>
 
       {/* UPDATED: Real-time Pricing Display */}
       {/* {pricing.currentPrice > 0 && (
@@ -689,35 +725,81 @@ export default function VehicleConditionWizard({ onComplete }) {
       {/* Disqualification Modal */}
       <Dialog
         open={showDisqualificationModal}
-        onOpenChange={setShowDisqualificationModal}
+        onClose={() => setShowDisqualificationModal(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: "0 0 0 1px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.12)",
+          },
+        }}
       >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <XCircle className="h-6 w-6" />
-              We're Sorry
-            </DialogTitle>
-          </DialogHeader>
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            color: "#d32f2f",
+            fontWeight: 600,
+            fontSize: "1.25rem",
+            pb: 2,
+          }}
+        >
+          <XCircle size={24} />
+          We're Sorry
+        </DialogTitle>
 
-          <div className="py-4">
-            <p className="text-gray-700 mb-4">{disqualificationReason}</p>
-            <p className="text-sm text-gray-500">
-              Thank you for your interest in our service.
-            </p>
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowDisqualificationModal(false)}
-            >
-              Close
-            </Button>
-            <Button onClick={() => (window.location.href = "/")}>
-              Back to Home
-            </Button>
-          </div>
+        <DialogContent sx={{ py: 3 }}>
+          <Typography
+            sx={{
+              color: "#666666",
+              fontSize: "0.938rem",
+              lineHeight: 1.6,
+              mb: 2,
+            }}
+          >
+            {disqualificationReason}
+          </Typography>
+          <Typography
+            sx={{
+              color: "#9ca3af",
+              fontSize: "0.875rem",
+              lineHeight: 1.6,
+            }}
+          >
+            Thank you for your interest in our service.
+          </Typography>
         </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1.5 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setShowDisqualificationModal(false)}
+            sx={{
+              borderColor: "#e0dfdc",
+              color: "#666666",
+              "&:hover": {
+                borderColor: "#0a66c2",
+                bgcolor: "#fafafa",
+              },
+            }}
+          >
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => (window.location.href = "/")}
+            sx={{
+              bgcolor: "#0a66c2",
+              "&:hover": {
+                bgcolor: "#004182",
+              },
+            }}
+          >
+            Back to Home
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Price Modal - Shows after all questions completed */}
@@ -735,6 +817,6 @@ export default function VehicleConditionWizard({ onComplete }) {
         mode={accountModalMode}
         onSuccess={handleAccountSuccess}
       />
-    </div>
+    </Box>
   );
 }

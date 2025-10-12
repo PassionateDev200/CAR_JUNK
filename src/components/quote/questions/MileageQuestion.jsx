@@ -2,12 +2,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Box,
+  TextField,
+  Typography,
+  Paper,
+  Stack,
+  Checkbox,
+  FormControlLabel,
+  Alert,
+} from "@mui/material";
 import { Gauge, Info } from "lucide-react";
+import QuestionLayout from "./QuestionLayout";
+import { questionTheme } from "@/theme/questionTheme";
 
 export default function MileageQuestion({
   vehicleDetails,
@@ -22,12 +29,10 @@ export default function MileageQuestion({
   const [mileageCategory, setMileageCategory] = useState("");
   const [error, setError] = useState("");
 
-  // FIXED: Proper state initialization and synchronization
   useEffect(() => {
     try {
       if (currentAnswer) {
         if (typeof currentAnswer === "object") {
-          // Handle object format: { mileage: 123456, unsure: false }
           if (currentAnswer.unsure || currentAnswer.mileage === "unsure") {
             setUnsureAboutMileage(true);
             setMileage("");
@@ -38,7 +43,6 @@ export default function MileageQuestion({
             calculateMileageCategory(currentAnswer.mileage);
           }
         } else if (typeof currentAnswer === "string") {
-          // Handle string format: "unsure" or "123456"
           if (currentAnswer === "unsure") {
             setUnsureAboutMileage(true);
             setMileage("");
@@ -50,19 +54,17 @@ export default function MileageQuestion({
           }
         }
       } else {
-        // Reset to initial state
         setMileage("");
         setUnsureAboutMileage(false);
         setMileageCategory("");
       }
-      setError(""); // Clear any previous errors
+      setError("");
     } catch (err) {
       console.error("Error initializing MileageQuestion state:", err);
       setError("Error loading previous answer");
     }
   }, [currentAnswer]);
 
-  // FIXED: Simplified mileage calculation with proper error handling
   const calculateMileageCategory = (miles) => {
     try {
       if (!vehicleDetails.year || !miles || miles <= 0) {
@@ -88,7 +90,6 @@ export default function MileageQuestion({
     }
   };
 
-  // FIXED: Updated to use new pricing system
   const getMileageAdjustment = (miles) => {
     try {
       if (!vehicleDetails.year || !miles || miles <= 0) {
@@ -101,11 +102,11 @@ export default function MileageQuestion({
       const expectedMileage = Math.max(vehicleAge * averageMilesPerYear, 0);
 
       if (miles > expectedMileage + 50000) {
-        return { type: "mileage", amount: -100 }; // High mileage penalty
+        return { type: "mileage", amount: -100 };
       } else if (miles < expectedMileage - 50000 && vehicleAge > 0) {
-        return { type: "mileage", amount: 50 }; // Low mileage bonus
+        return { type: "mileage", amount: 50 };
       } else {
-        return { type: "mileage", amount: 0 }; // Average mileage
+        return { type: "mileage", amount: 0 };
       }
     } catch (err) {
       console.error("Error calculating mileage adjustment:", err);
@@ -113,7 +114,6 @@ export default function MileageQuestion({
     }
   };
 
-  // FIXED: Added Next button functionality
   const handleNext = () => {
     try {
       setError("");
@@ -121,7 +121,7 @@ export default function MileageQuestion({
       if (unsureAboutMileage) {
         onAnswer(
           { mileage: "unsure", unsure: true },
-          { type: "mileage", amount: -75 } // Uncertainty penalty
+          { type: "mileage", amount: -75 }
         );
       } else if (mileage && parseInt(mileage.replace(/,/g, "")) > 0) {
         const miles = parseInt(mileage.replace(/,/g, ""));
@@ -136,7 +136,6 @@ export default function MileageQuestion({
     }
   };
 
-  // FIXED: Improved mileage formatting with error handling
   const formatMileage = (value) => {
     try {
       const digits = value.replace(/\D/g, "");
@@ -152,7 +151,6 @@ export default function MileageQuestion({
       setMileage(formatted);
       setError("");
 
-      // Real-time category calculation
       if (formatted && !unsureAboutMileage) {
         const miles = parseInt(formatted.replace(/,/g, ""));
         if (miles > 0) {
@@ -166,8 +164,9 @@ export default function MileageQuestion({
     }
   };
 
-  const handleUnsureToggle = (checked) => {
+  const handleUnsureToggle = (event) => {
     try {
+      const checked = event.target.checked;
       setUnsureAboutMileage(checked);
       setError("");
 
@@ -182,27 +181,13 @@ export default function MileageQuestion({
     }
   };
 
-  // FIXED: Safe calculation of expected mileage
-  const getExpectedMileage = () => {
-    try {
-      if (!vehicleDetails.year) return "N/A";
-
-      const currentYear = new Date().getFullYear();
-      const vehicleAge = currentYear - parseInt(vehicleDetails.year);
-      return Math.max(vehicleAge * 12000, 0).toLocaleString();
-    } catch (err) {
-      return "N/A";
-    }
-  };
-
   const getMileageInfo = () => {
     if (unsureAboutMileage) {
       return {
         text: "We'll estimate based on vehicle age",
-        color: "text-amber-600",
-        bg: "bg-amber-50",
-        border: "border-amber-200",
-        impact: "-$75 for uncertainty",
+        color: "#d97706",
+        bg: "#fef3c7",
+        border: "#fde68a",
       };
     }
 
@@ -210,26 +195,23 @@ export default function MileageQuestion({
       case "low":
         return {
           text: "Lower than average - increases value!",
-          color: "text-green-600",
-          bg: "bg-green-50",
-          border: "border-green-200",
-          impact: "+$50 bonus",
+          color: "#057642",
+          bg: "#f0f9f6",
+          border: "#b9d6f2",
         };
       case "average":
         return {
           text: "About average for vehicle age",
-          color: "text-blue-600",
-          bg: "bg-blue-50",
-          border: "border-blue-200",
-          impact: "No adjustment",
+          color: "#0a66c2",
+          bg: "#e3f0ff",
+          border: "#b9d6f2",
         };
       case "high":
         return {
           text: "Higher than average for vehicle age",
-          color: "text-amber-600",
-          bg: "bg-amber-50",
-          border: "border-amber-200",
-          impact: "-$100 adjustment",
+          color: "#d97706",
+          bg: "#fef3c7",
+          border: "#fde68a",
         };
       default:
         return null;
@@ -246,99 +228,132 @@ export default function MileageQuestion({
   const mileageInfo = getMileageInfo();
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader className="text-center pb-6">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Gauge className="h-6 w-6 text-blue-600" />
-          <CardTitle className="text-xl text-gray-800">
-            What's the mileage on your {getVehicleDisplayName()}?
-          </CardTitle>
-        </div>
-        <p className="text-sm text-gray-600 max-w-md mx-auto">
-          Don't worry about the exact number. We round to the nearest thousand,
-          so you can too.
-        </p>
-        <p className="text-xs text-gray-500 mt-2">
-          Question {questionNumber} of {totalQuestions}
-        </p>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {/* Error Alert */}
-        {error && (
-          <Alert className="border-red-200 bg-red-50">
-            <Info className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-700">
+    <QuestionLayout
+      icon={Gauge}
+      title={`What's the mileage on your ${getVehicleDisplayName()}?`}
+      description="Don't worry about the exact number. We round to the nearest thousand, so you can too."
+      questionNumber={questionNumber}
+      totalQuestions={totalQuestions}
+      onPrevious={onPrevious}
+      onNext={handleNext}
+      nextDisabled={!mileage && !unsureAboutMileage}
+    >
+      <Box sx={{ maxWidth: "600px", mx: "auto" }}>
+        <Stack spacing={3}>
+          {/* Error Alert */}
+          {error && (
+            <Alert
+              severity="error"
+              icon={<Info size={20} />}
+              sx={{
+                borderRadius: 2,
+                bgcolor: "#ffebee",
+                border: "1px solid #ffcdd2",
+                "& .MuiAlert-message": {
+                  color: "#d32f2f",
+                  fontSize: "0.875rem",
+                },
+              }}
+            >
               {error}
-            </AlertDescription>
-          </Alert>
-        )}
+            </Alert>
+          )}
 
-        {/* Mileage Input */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="mileage" className="text-sm font-medium">
+          {/* Mileage Input */}
+          <Box>
+            <Typography
+              sx={{
+                fontSize: questionTheme.typography.sizes.sm,
+                fontWeight: questionTheme.typography.weights.semibold,
+                color: questionTheme.colors.text.primary,
+                mb: 1.5,
+              }}
+            >
               Enter mileage (optional)
-            </Label>
-            <Input
-              id="mileage"
-              type="text"
-              placeholder="e.g., 125,000"
+            </Typography>
+            <TextField
+              fullWidth
               value={mileage}
               onChange={handleMileageChange}
               disabled={unsureAboutMileage}
-              className="text-lg"
+              placeholder="e.g., 125,000"
+              inputProps={{
+                style: {
+                  fontSize: "1.125rem",
+                },
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  bgcolor: unsureAboutMileage
+                    ? questionTheme.colors.background.secondary
+                    : questionTheme.colors.background.primary,
+                  "& fieldset": {
+                    borderColor: questionTheme.colors.border.primary,
+                    borderWidth: 2,
+                  },
+                  "&:hover fieldset": {
+                    borderColor: questionTheme.colors.border.focus,
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: questionTheme.colors.primary.main,
+                  },
+                },
+              }}
             />
-          </div>
+          </Box>
 
           {/* Unsure Checkbox */}
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="unsure"
-              checked={unsureAboutMileage}
-              onChange={(e) => handleUnsureToggle(e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded"
-            />
-            <Label htmlFor="unsure" className="text-sm cursor-pointer">
-              I'm not sure about the exact mileage
-            </Label>
-          </div>
-        </div>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={unsureAboutMileage}
+                onChange={handleUnsureToggle}
+                sx={{
+                  color: questionTheme.colors.border.primary,
+                  "&.Mui-checked": {
+                    color: questionTheme.colors.primary.main,
+                  },
+                }}
+              />
+            }
+            label={
+              <Typography
+                sx={{
+                  fontSize: questionTheme.typography.sizes.md,
+                  color: questionTheme.colors.text.primary,
+                }}
+              >
+                I'm not sure about the exact mileage
+              </Typography>
+            }
+          />
 
-        {/* Mileage Category Info */}
-        {mileageInfo && (
-          <div
-            className={`p-4 rounded-lg border ${mileageInfo.bg} ${mileageInfo.border}`}
-          >
-            <div className={`text-sm font-medium ${mileageInfo.color} mb-1`}>
-              {mileageInfo.text}
-            </div>
-            {/* <div className="text-xs text-gray-600">
-              Price Impact: {mileageInfo.impact}
-            </div> */}
-          </div>
-        )}
-
-        {/* Navigation Buttons */}
-        <div className="flex justify-between pt-6">
-          {onPrevious ? (
-            <Button variant="outline" onClick={onPrevious}>
-              Previous
-            </Button>
-          ) : (
-            <div></div>
+          {/* Mileage Category Info */}
+          {mileageInfo && (
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2.5,
+                borderRadius: 2,
+                border: "1.5px solid",
+                borderColor: mileageInfo.border,
+                bgcolor: mileageInfo.bg,
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: questionTheme.typography.sizes.md,
+                  fontWeight: questionTheme.typography.weights.semibold,
+                  color: mileageInfo.color,
+                }}
+              >
+                {mileageInfo.text}
+              </Typography>
+            </Paper>
           )}
-
-          <Button
-            onClick={handleNext}
-            disabled={!mileage && !unsureAboutMileage}
-            className="min-w-24"
-          >
-            Next
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </Stack>
+      </Box>
+    </QuestionLayout>
   );
 }

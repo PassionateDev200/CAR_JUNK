@@ -2,11 +2,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Box,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  Paper,
+  Typography,
+  Alert,
+  Stack,
+} from "@mui/material";
 import { FileText, AlertCircle } from "lucide-react";
+import QuestionLayout from "./QuestionLayout";
+import { questionTheme } from "@/theme/questionTheme";
 
 export default function TitleQuestion({
   vehicleDetails,
@@ -53,11 +61,11 @@ export default function TitleQuestion({
     },
   ];
 
-  const handleSelection = (value) => {
+  const handleSelection = (event) => {
+    const value = event.target.value;
     const selectedOption = options.find((opt) => opt.value === value);
     setSelectedValue(value);
 
-    // Show warning for disqualifying options but don't auto-advance
     if (selectedOption.isDisqualifying) {
       setShowWarning(true);
     } else {
@@ -70,7 +78,6 @@ export default function TitleQuestion({
       const selectedOption = options.find((opt) => opt.value === selectedValue);
 
       if (selectedOption.isDisqualifying) {
-        // For disqualifying answers, add a small delay to show the warning
         setTimeout(() => {
           onAnswer(selectedValue, selectedOption.priceAdjustment);
         }, 1500);
@@ -90,87 +97,101 @@ export default function TitleQuestion({
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader className="text-center pb-6">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <FileText className="h-6 w-6 text-blue-600" />
-          <CardTitle className="text-xl text-gray-800">
-            Does your {getVehicleDisplayName()} have a clean title?
-          </CardTitle>
-        </div>
-        <p className="text-sm text-gray-600 max-w-md mx-auto">
-          Unless your vehicle has a history of severe damage, it probably has a
-          clean title. But it's easy to check. Look for a note or stamp on your
-          title that says 'salvage' or 'rebuilt.'
-        </p>
-        <p className="text-xs text-gray-500 mt-2">
-          Question {questionNumber} of {totalQuestions}
-        </p>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
+    <QuestionLayout
+      icon={FileText}
+      title={`Does your ${getVehicleDisplayName()} have a clean title?`}
+      description="Unless your vehicle has a history of severe damage, it probably has a clean title. But it's easy to check. Look for a note or stamp on your title that says 'salvage' or 'rebuilt.'"
+      questionNumber={questionNumber}
+      totalQuestions={totalQuestions}
+      onPrevious={onPrevious}
+      onNext={handleNext}
+      nextDisabled={!selectedValue}
+    >
+      <Box sx={{ maxWidth: "700px", mx: "auto" }}>
         {showWarning && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-700">
-              We require a title to complete the purchase. We'll redirect you
-              shortly.
-            </AlertDescription>
+          <Alert
+            severity="error"
+            icon={<AlertCircle size={20} />}
+            sx={{
+              mb: 3,
+              borderRadius: 2,
+              bgcolor: "#ffebee",
+              border: "1px solid #ffcdd2",
+              "& .MuiAlert-message": {
+                color: "#d32f2f",
+                fontSize: "0.875rem",
+              },
+            }}
+          >
+            We require a title to complete the purchase. We'll redirect you shortly.
           </Alert>
         )}
 
-        {options.map((option) => (
-          <div key={option.value} className="space-y-2">
-            <Label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-              <input
-                type="radio"
-                name="title"
-                value={option.value}
-                checked={selectedValue === option.value}
-                onChange={() => handleSelection(option.value)}
-                className="w-4 h-4 text-blue-600"
-              />
-              <div className="flex-1">
-                <div className="font-medium text-gray-900">{option.label}</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  {option.description}
-                  {/* {option.priceAdjustment &&
-                    option.priceAdjustment.amount !== 0 && (
-                      <div className="text-xs text-red-600 mt-1">
-                        Price Impact: -$
-                        {Math.abs(option.priceAdjustment.amount)} adjustment
-                      </div>
-                    )} */}
-                  {/* {option.priceAdjustment &&
-                    option.priceAdjustment.amount === 0 && (
-                      <div className="text-xs text-green-600 mt-1">
-                        Price Impact: No adjustment needed
-                      </div>
-                    )} */}
-                </div>
-              </div>
-            </Label>
-          </div>
-        ))}
-
-        <div className="flex justify-between pt-6">
-          {onPrevious ? (
-            <Button variant="outline" onClick={onPrevious}>
-              Previous
-            </Button>
-          ) : (
-            <div></div>
-          )}
-
-          <Button
-            onClick={handleNext}
-            disabled={!selectedValue}
-            className="min-w-24"
-          >
-            Next
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        <RadioGroup value={selectedValue} onChange={handleSelection}>
+          <Stack spacing={2}>
+            {options.map((option) => (
+              <Paper
+                key={option.value}
+                elevation={0}
+                sx={{
+                  p: 0,
+                  border: "2px solid",
+                  borderColor:
+                    selectedValue === option.value
+                      ? questionTheme.colors.primary.main
+                      : questionTheme.colors.border.primary,
+                  borderRadius: 2,
+                  cursor: "pointer",
+                  transition: questionTheme.transitions.default,
+                  "&:hover": {
+                    borderColor: questionTheme.colors.border.focus,
+                    bgcolor: questionTheme.colors.background.hover,
+                  },
+                }}
+              >
+                <FormControlLabel
+                  value={option.value}
+                  control={
+                    <Radio
+                      sx={{
+                        ml: 2,
+                        color: questionTheme.colors.border.primary,
+                        "&.Mui-checked": {
+                          color: questionTheme.colors.primary.main,
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Box sx={{ py: 1.5, pr: 2 }}>
+                      <Typography
+                        sx={{
+                          fontSize: questionTheme.typography.sizes.md,
+                          fontWeight: questionTheme.typography.weights.semibold,
+                          color: questionTheme.colors.text.primary,
+                          mb: 0.5,
+                        }}
+                      >
+                        {option.label}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: questionTheme.typography.sizes.sm,
+                          color: questionTheme.colors.text.secondary,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {option.description}
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{ m: 0, width: "100%" }}
+                />
+              </Paper>
+            ))}
+          </Stack>
+        </RadioGroup>
+      </Box>
+    </QuestionLayout>
   );
 }
