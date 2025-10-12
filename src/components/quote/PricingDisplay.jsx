@@ -364,8 +364,6 @@ export default function PricingDisplay() {
             />
           </Box>
 
-          <Divider sx={{ my: 4 }} />
-
           {/* Contact Form */}
           <Box>
             <Stack direction="row" spacing={1.5} alignItems="center" mb={3}>
