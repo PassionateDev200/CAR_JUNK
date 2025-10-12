@@ -3,6 +3,7 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import { Suspense } from "react";
 import { VehicleProvider } from "@/contexts/VehicleContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -123,29 +124,31 @@ export default function RootLayout({ children }) {
         />
 
         <ErrorBoundary>
-          <VehicleProvider>
-            {/* Skip to main content for accessibility */}
-            <a
-              href="#main-content"
-              className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-md z-50 focus:z-50"
-            >
-              Skip to main content
-            </a>
+          <AuthProvider>
+            <VehicleProvider>
+              {/* Skip to main content for accessibility */}
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-md z-50 focus:z-50"
+              >
+                Skip to main content
+              </a>
 
-            <ConditionalLayout>{children}</ConditionalLayout>
+              <ConditionalLayout>{children}</ConditionalLayout>
 
-            {/* Toast notifications for user feedback */}
-            <Toaster />
+              {/* Toast notifications for user feedback */}
+              <Toaster />
 
-            {/* Accessibility announcements */}
-            <div
-              id="a11y-status-message"
-              className="sr-only"
-              role="status"
-              aria-live="polite"
-              aria-atomic="true"
-            ></div>
-          </VehicleProvider>
+              {/* Accessibility announcements */}
+              <div
+                id="a11y-status-message"
+                className="sr-only"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              ></div>
+            </VehicleProvider>
+          </AuthProvider>
         </ErrorBoundary>
       </body>
     </html>

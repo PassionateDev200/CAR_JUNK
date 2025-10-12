@@ -3,61 +3,75 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Menu,
+  Menu as MenuIcon,
   X,
-  ChevronRight,
-  Car,
   Phone,
   HelpCircle,
   Sparkles,
   FileQuestion,
   FileText,
-  Settings,
   Shield,
-  User,
-  LogOut,
+  ChevronDown,
 } from "lucide-react";
+import {
+  Menu,
+  MenuItem,
+  Avatar,
+  Divider,
+  ListItemIcon,
+  ListItemText,
+  Box,
+} from "@mui/material";
+import {
+  Person as PersonIcon,
+  Logout as LogoutIcon,
+  ManageAccounts as ManageAccountsIcon,
+  Dashboard as DashboardIcon,
+} from "@mui/icons-material";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { useVehicle, useVehicleDispatch, vehicleActions } from "@/contexts/VehicleContext";
-import axios from "@/lib/axios";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const pathname = usePathname();
+  const router = useRouter();
   
-  // Get user authentication state from VehicleContext
-  const vehicleState = useVehicle();
-  const dispatch = useVehicleDispatch();
-  const { sellerInfo } = vehicleState;
-  
-  // Check if user is logged in
-  const isLoggedIn = sellerInfo?.name || sellerInfo?.email;
+  // Get authentication state from AuthContext
+  const { user, isAuthenticated, logout } = useAuth();
   
   // Logout handler
   const handleLogout = async () => {
     try {
-      await axios.post("/api/auth/logout");
-      // Clear seller info from context
-      dispatch(
-        vehicleActions.setSellerInfo({
-          name: "",
-          email: "",
-          phone: "",
-          address: "",
-        })
-      );
-      // Redirect to home
-      window.location.href = "/";
+      await logout();
+      setUserMenuAnchor(null);
+      router.push("/");
     } catch (error) {
       console.error("Logout failed:", error);
     }
+  };
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user) return "U";
+    if (user.name) {
+      const names = user.name.split(" ");
+      if (names.length >= 2) {
+        return `${names[0][0]}${names[1][0]}`.toUpperCase();
+      }
+      return names[0][0].toUpperCase();
+    }
+    if (user.email) {
+      return user.email[0].toUpperCase();
+    }
+    return "U";
   };
 
   useEffect(() => {
@@ -72,11 +86,6 @@ const Header = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  // Replace the getAdminLoginUrl function with this simpler version:
-  const getAdminLoginUrl = () => {
-    return "/admin/login"; // Remove callback URL logic for now
-  };
 
   const navItems = [
     {
@@ -125,9 +134,10 @@ const Header = () => {
                 </div>
               ))}
             </nav>
-            <Button className="hidden md:flex bg-gradient-to-r from-orange-400 to-orange-500">
-              Get Started
-            </Button>
+            <div className="hidden md:flex items-center space-x-2">
+              <Button variant="ghost" size="sm">Sign In</Button>
+              <Button variant="outline" size="sm">Join Now</Button>
+            </div>
           </div>
         </div>
       </header>
@@ -175,7 +185,7 @@ const Header = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-1">
-              {navItems.map((item, i) => (
+              {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -204,49 +214,240 @@ const Header = () => {
               ))}
             </nav>
 
-            {/* CTA Buttons */}
-            <div className="hidden md:flex items-center space-x-3">
-              {/* Admin Button with Callback */}
-              <Link href={getAdminLoginUrl()}>
+            {/* Desktop CTA & Auth */}
+            <div className="hidden md:flex items-center space-x-2">
+              {/* Admin Button */}
+              <Link href="/admin/login">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="flex items-center space-x-2 border-gray-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200"
-                  title="Admin Login"
+                  className="flex items-center space-x-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200"
+                  title="Admin Portal"
                 >
                   <Shield className="w-4 h-4" />
-                  <span className="hidden lg:inline">Admin</span>
+                  <span className="hidden lg:inline text-sm">Admin</span>
                 </Button>
               </Link>
 
-              {/* User Info or Get Started Button */}
-              {isLoggedIn ? (
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2 bg-blue-50 px-3 py-2 rounded-lg">
-                    <User className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-800">
-                      {sellerInfo.name || sellerInfo.email}
-                    </span>
-                  </div>
-                  <Button
-                    onClick={handleLogout}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center space-x-2 border-gray-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200"
-                    title="Logout"
+              <Divider orientation="vertical" flexItem sx={{ mx: 1, borderColor: "#e5e7eb" }} />
+
+              {/* User Profile Button with Dropdown */}
+              {isAuthenticated ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    cursor: "pointer",
+                    px: 1.5,
+                    py: 0.75,
+                    borderRadius: 2,
+                    transition: "all 0.2s",
+                    "&:hover": {
+                      bgcolor: "#f3f4f6",
+                    },
+                  }}
+                  onClick={(e) => setUserMenuAnchor(e.currentTarget)}
+                >
+                  <Avatar
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      bgcolor: "#0a66c2",
+                      fontSize: "0.875rem",
+                      fontWeight: 600,
+                    }}
                   >
-                    <LogOut className="w-4 h-4" />
-                    <span className="hidden lg:inline">Logout</span>
-                  </Button>
-                </div>
+                    {getUserInitials()}
+                  </Avatar>
+                  <Box sx={{ display: { xs: "none", lg: "block" } }}>
+                    <Box
+                      sx={{
+                        fontSize: "0.813rem",
+                        fontWeight: 600,
+                        color: "#000000",
+                        lineHeight: 1.2,
+                        maxWidth: "120px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {user?.name || "User"}
+                    </Box>
+                    <Box
+                      sx={{
+                        fontSize: "0.688rem",
+                        color: "#666666",
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      Account
+                    </Box>
+                  </Box>
+                  <ChevronDown className="w-4 h-4 text-gray-600" />
+                </Box>
               ) : (
-                <Link href="/quote">
-                  <Button className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-semibold px-6 py-2 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                    Get Started
-                    <ChevronRight className="ml-1 w-4 h-4" />
-                  </Button>
-                </Link>
+                <>
+                  {/* Guest Buttons */}
+                  <Link href="/login">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-700 hover:text-gray-900 hover:bg-gray-50 font-medium transition-all duration-200 px-4"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold transition-all duration-200 px-5"
+                    >
+                      Join Now
+                    </Button>
+                  </Link>
+                </>
               )}
+
+              {/* User Dropdown Menu */}
+              <Menu
+                anchorEl={userMenuAnchor}
+                open={Boolean(userMenuAnchor)}
+                onClose={() => setUserMenuAnchor(null)}
+                PaperProps={{
+                  elevation: 0,
+                  sx: {
+                    mt: 1.5,
+                    minWidth: 240,
+                    borderRadius: 2,
+                    border: "1px solid #e0dfdc",
+                    boxShadow: "0 0 0 1px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.12)",
+                    "& .MuiMenuItem-root": {
+                      px: 2,
+                      py: 1.5,
+                      borderRadius: 1,
+                      mx: 1,
+                      my: 0.25,
+                      fontSize: "0.938rem",
+                      "&:hover": {
+                        bgcolor: "#f3f2ef",
+                      },
+                    },
+                  },
+                }}
+                transformOrigin={{ horizontal: "right", vertical: "top" }}
+                anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+              >
+                {/* User Info Header */}
+                <Box sx={{ px: 2.5, py: 2, borderBottom: "1px solid #e0dfdc" }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                    }}
+                  >
+                    <Avatar
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        bgcolor: "#0a66c2",
+                        fontSize: "1.125rem",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {getUserInitials()}
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Box
+                        sx={{
+                          fontSize: "1rem",
+                          fontWeight: 600,
+                          color: "#000000",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {user?.name || "User"}
+                      </Box>
+                      <Box
+                        sx={{
+                          fontSize: "0.813rem",
+                          color: "#666666",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {user?.email}
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+
+                {/* Menu Items */}
+                <MenuItem
+                  onClick={() => {
+                    setUserMenuAnchor(null);
+                    router.push("/manage");
+                  }}
+                >
+                  <ListItemIcon>
+                    <DashboardIcon sx={{ fontSize: 20, color: "#666666" }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="My Offers"
+                    primaryTypographyProps={{
+                      fontSize: "0.938rem",
+                      fontWeight: 500,
+                    }}
+                  />
+                </MenuItem>
+
+                <MenuItem
+                  onClick={() => {
+                    setUserMenuAnchor(null);
+                    router.push("/account");
+                  }}
+                >
+                  <ListItemIcon>
+                    <ManageAccountsIcon sx={{ fontSize: 20, color: "#666666" }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Account Settings"
+                    primaryTypographyProps={{
+                      fontSize: "0.938rem",
+                      fontWeight: 500,
+                    }}
+                  />
+                </MenuItem>
+
+                <Divider sx={{ my: 1, borderColor: "#e0dfdc" }} />
+
+                <MenuItem
+                  onClick={handleLogout}
+                  sx={{
+                    color: "#dc2626 !important",
+                    "&:hover": {
+                      bgcolor: "#fef2f2 !important",
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <LogoutIcon sx={{ fontSize: 20, color: "#dc2626" }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Sign Out"
+                    primaryTypographyProps={{
+                      fontSize: "0.938rem",
+                      fontWeight: 600,
+                    }}
+                  />
+                </MenuItem>
+              </Menu>
             </div>
 
             {/* Mobile Menu Button */}
@@ -259,7 +460,7 @@ const Header = () => {
               {mobileMenuOpen ? (
                 <X className="w-6 h-6" />
               ) : (
-                <Menu className="w-6 h-6" />
+                <MenuIcon className="w-6 h-6" />
               )}
             </Button>
           </div>
@@ -273,17 +474,77 @@ const Header = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-50 md:hidden"
+            className="fixed inset-0 z-40 md:hidden"
           >
-            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
+            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="relative top-16 mx-4 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
             >
-              <div className="py-6 px-4 space-y-2">
-                {navItems.map((item, i) => (
+              <div className="py-6 px-4 space-y-2 max-h-[calc(100vh-100px)] overflow-y-auto">
+                {/* User Profile Section (Mobile) */}
+                {isAuthenticated && (
+                  <Box
+                    sx={{
+                      mb: 3,
+                      pb: 3,
+                      borderBottom: "1px solid #e5e7eb",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        p: 2,
+                        bgcolor: "#f3f2ef",
+                        borderRadius: 2,
+                      }}
+                    >
+                      <Avatar
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          bgcolor: "#0a66c2",
+                          fontSize: "1.125rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {getUserInitials()}
+                      </Avatar>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box
+                          sx={{
+                            fontSize: "1.063rem",
+                            fontWeight: 600,
+                            color: "#000000",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {user?.name || "User"}
+                        </Box>
+                        <Box
+                          sx={{
+                            fontSize: "0.875rem",
+                            color: "#666666",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {user?.email}
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
+
+                {/* Navigation Items */}
+                {navItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
@@ -300,48 +561,70 @@ const Header = () => {
                   </Link>
                 ))}
 
-                {/* Mobile Admin Button with Callback */}
+                {/* Admin Button (Mobile) */}
                 <Link
-                  href={getAdminLoginUrl()}
+                  href="/admin/login"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center p-4 rounded-2xl text-lg font-medium text-gray-700 hover:bg-gray-100 transition-all duration-300 border-t border-gray-200 mt-4 pt-6"
                 >
                   <Shield className="w-5 h-5" />
-                  <span className="ml-3">Admin Login</span>
+                  <span className="ml-3">Admin Portal</span>
                 </Link>
 
-                {/* Mobile User Info or CTA */}
-                {isLoggedIn ? (
+                {/* Auth Buttons (Mobile) */}
+                {isAuthenticated ? (
                   <div className="border-t border-gray-200 mt-4 pt-6 space-y-3">
-                    <div className="flex items-center p-4 rounded-2xl bg-blue-50">
-                      <User className="w-5 h-5 text-blue-600" />
-                      <span className="ml-3 text-lg font-medium text-blue-800">
-                        {sellerInfo.name || sellerInfo.email}
-                      </span>
-                    </div>
+                    <Link
+                      href="/account"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Button
+                        variant="outline"
+                        className="w-full py-3 text-lg font-medium"
+                      >
+                        <ManageAccountsIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                        Account Settings
+                      </Button>
+                    </Link>
                     <Button
                       onClick={() => {
                         handleLogout();
                         setMobileMenuOpen(false);
                       }}
                       variant="outline"
-                      className="w-full flex items-center justify-center py-3 text-lg"
+                      className="w-full py-3 text-lg font-medium border-red-300 text-red-600 hover:bg-red-50"
                     >
-                      <LogOut className="w-5 h-5 mr-2" />
-                      Logout
+                      <LogoutIcon sx={{ mr: 1.5, fontSize: 20 }} />
+                      Sign Out
                     </Button>
                   </div>
                 ) : (
-                  <Link
-                    href="/quote"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block w-full mt-6"
-                  >
-                    <Button className="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-semibold py-3 rounded-xl">
-                      Get Started
-                      <ChevronRight className="ml-2 w-5 h-5" />
-                    </Button>
-                  </Link>
+                  <div className="border-t border-gray-200 mt-4 pt-6 space-y-3">
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full"
+                    >
+                      <Button
+                        variant="outline"
+                        className="w-full py-3 text-lg font-medium border-gray-300"
+                      >
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full"
+                    >
+                      <Button
+                        variant="outline"
+                        className="w-full py-3 text-lg font-medium border-2 border-blue-600 text-blue-600"
+                      >
+                        Join Now
+                      </Button>
+                    </Link>
+                  </div>
                 )}
               </div>
             </motion.div>
