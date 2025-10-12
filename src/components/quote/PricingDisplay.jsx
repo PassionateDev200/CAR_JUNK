@@ -62,6 +62,7 @@ export default function PricingDisplay() {
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
   const [submissionError, setSubmissionError] = useState("");
   const [quoteId, setQuoteId] = useState("");
+  const [accessToken, setAccessToken] = useState("");
 
   const handleInputChange = (field, value) => {
     setSellerInfo((prev) => ({
@@ -116,6 +117,7 @@ export default function PricingDisplay() {
       );
 
       setQuoteId(result.quoteId);
+      setAccessToken(result.accessToken);
       setSubmissionSuccess(true);
     } catch (error) {
       console.error("Error submitting quote:", error);
@@ -250,6 +252,25 @@ export default function PricingDisplay() {
               <Button
                 variant="contained"
                 size="large"
+                startIcon={<Schedule />}
+                onClick={() => (window.location.href = `/manage/${accessToken}`)}
+                sx={{
+                  py: 1.5,
+                  textTransform: "none",
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  bgcolor: "#0a66c2",
+                  "&:hover": {
+                    bgcolor: "#004182",
+                  },
+                }}
+              >
+                Schedule Pickup Now
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
                 onClick={() => (window.location.href = "/")}
                 sx={{
                   py: 1.5,
@@ -257,23 +278,15 @@ export default function PricingDisplay() {
                   fontSize: "1rem",
                   fontWeight: 600,
                   borderRadius: 2,
+                  borderColor: "#e0dfdc",
+                  color: "#666666",
+                  "&:hover": {
+                    borderColor: "#0a66c2",
+                    bgcolor: "#edf3f8",
+                  },
                 }}
               >
                 Get Another Quote
-              </Button>
-              <Button
-                variant="outlined"
-                size="large"
-                onClick={() => (window.location.href = "/how-it-works")}
-                sx={{
-                  py: 1.5,
-                  textTransform: "none",
-                  fontSize: "1rem",
-                  fontWeight: 600,
-                  borderRadius: 2,
-                }}
-              >
-                Learn More About Our Process
               </Button>
             </Stack>
           </Paper>
