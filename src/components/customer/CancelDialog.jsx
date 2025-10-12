@@ -2,19 +2,28 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { AlertTriangle, XCircle } from "lucide-react";
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Alert,
+  AlertTitle,
+  Box,
+  Typography,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  FormLabel,
+  Stack,
+} from "@mui/material";
+import {
+  Warning as WarningIcon,
+  Cancel as CancelIcon,
+} from "@mui/icons-material";
 import { cancelQuote } from "@/lib/quoteApi";
 
 export default function CancelDialog({
@@ -107,94 +116,115 @@ export default function CancelDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <XCircle className="h-5 w-5 text-red-600" />
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: { borderRadius: 2 },
+      }}
+    >
+      <DialogTitle>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <CancelIcon color="error" />
+          <Typography variant="h6" fontWeight={600}>
             Cancel Quote
-          </DialogTitle>
-        </DialogHeader>
+          </Typography>
+        </Stack>
+      </DialogTitle>
 
-        <div className="space-y-6">
+      <DialogContent dividers>
+        <Stack spacing={3}>
           {/* Warning Alert */}
-          <Alert className="border-red-200 bg-red-50">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-700">
-              <strong>Warning:</strong> Cancelling this quote cannot be undone.
-              You'll need to start a new quote process if you change your mind.
-            </AlertDescription>
+          <Alert severity="error" icon={<WarningIcon />}>
+            <AlertTitle sx={{ fontWeight: 600 }}>Warning</AlertTitle>
+            Cancelling this quote cannot be undone. You'll need to start a new
+            quote process if you change your mind.
           </Alert>
 
           {/* Reason Selection */}
-          <div>
-            <Label className="text-base font-medium mb-3 block">
+          <FormControl component="fieldset">
+            <FormLabel
+              component="legend"
+              sx={{ mb: 2, fontWeight: 600, fontSize: "1rem" }}
+            >
               Why are you cancelling this quote?
-            </Label>
-            <RadioGroup value={reason} onValueChange={setReason}>
+            </FormLabel>
+            <RadioGroup value={reason} onChange={(e) => setReason(e.target.value)}>
               {reasons.map((reasonOption) => (
-                <div
+                <Box
                   key={reasonOption.value}
-                  className="flex items-start space-x-3"
+                  sx={{
+                    mb: 2,
+                    pb: 2,
+                    borderBottom:
+                      reasonOption.value !== reasons[reasons.length - 1].value
+                        ? "1px solid"
+                        : "none",
+                    borderColor: "divider",
+                  }}
                 >
-                  <RadioGroupItem
+                  <FormControlLabel
                     value={reasonOption.value}
-                    id={reasonOption.value}
-                    className="mt-1"
+                    control={<Radio />}
+                    label={
+                      <Box>
+                        <Typography variant="body1" fontWeight={500}>
+                          {reasonOption.label}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mt: 0.5 }}
+                        >
+                          {reasonOption.description}
+                        </Typography>
+                      </Box>
+                    }
                   />
-                  <div className="flex-1">
-                    <Label
-                      htmlFor={reasonOption.value}
-                      className="font-medium cursor-pointer"
-                    >
-                      {reasonOption.label}
-                    </Label>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {reasonOption.description}
-                    </p>
-                  </div>
-                </div>
+                </Box>
               ))}
             </RadioGroup>
-          </div>
+          </FormControl>
 
           {/* Additional Notes */}
-          <div>
-            <Label htmlFor="note" className="text-base font-medium">
+          <Box>
+            <Typography variant="body1" fontWeight={600} gutterBottom>
               Additional Notes (Optional)
-            </Label>
-            <Textarea
-              id="note"
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
               placeholder="Any additional comments or feedback..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="mt-2"
-              rows={3}
+              variant="outlined"
             />
-          </div>
+          </Box>
 
           {error && (
-            <Alert className="border-red-200 bg-red-50">
-              <AlertDescription className="text-red-700">
-                {error}
-              </AlertDescription>
+            <Alert severity="error">
+              <Typography variant="body2">{error}</Typography>
             </Alert>
           )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={loading}>
-            Keep Quote
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleCancel}
-            disabled={loading || !reason}
-          >
-            {loading ? "Cancelling..." : "Cancel Quote"}
-          </Button>
-        </DialogFooter>
+        </Stack>
       </DialogContent>
+
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button onClick={handleClose} disabled={loading} variant="outlined">
+          Keep Quote
+        </Button>
+        <Button
+          onClick={handleCancel}
+          disabled={loading || !reason}
+          variant="contained"
+          color="error"
+        >
+          {loading ? "Cancelling..." : "Cancel Quote"}
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 }

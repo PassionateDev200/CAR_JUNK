@@ -2,20 +2,28 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Calendar, Clock, RotateCcw } from "lucide-react";
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Alert,
+  Box,
+  Typography,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  FormLabel,
+  Stack,
+  Grid,
+} from "@mui/material";
+import {
+  Refresh as RefreshIcon,
+  Schedule as ClockIcon,
+} from "@mui/icons-material";
 import { reschedulePickup } from "@/lib/quoteApi";
 
 export default function RescheduleDialog({
@@ -136,23 +144,32 @@ export default function RescheduleDialog({
   const minDate = tomorrow.toISOString().split("T")[0];
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <RotateCcw className="h-5 w-5 text-blue-600" />
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: { borderRadius: 2 },
+      }}
+    >
+      <DialogTitle>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <RefreshIcon color="primary" />
+          <Typography variant="h6" fontWeight={600}>
             Reschedule Pickup
-          </DialogTitle>
-        </DialogHeader>
+          </Typography>
+        </Stack>
+      </DialogTitle>
 
-        <div className="space-y-6">
+      <DialogContent dividers>
+        <Stack spacing={3}>
           {/* Current Pickup Info */}
           {quote.pickupDetails &&
             (quote.pickupDetails.scheduledDate ||
               quote.pickupDetails.scheduledTime) && (
-              <Alert className="border-blue-200 bg-blue-50">
-                <Clock className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-700">
+              <Alert severity="info" icon={<ClockIcon />}>
+                <Typography variant="body2">
                   <strong>Current pickup:</strong>{" "}
                   {quote.pickupDetails.scheduledDate &&
                     new Date(
@@ -160,112 +177,127 @@ export default function RescheduleDialog({
                     ).toLocaleDateString()}{" "}
                   {quote.pickupDetails.scheduledTime &&
                     `at ${quote.pickupDetails.scheduledTime}`}
-                </AlertDescription>
+                </Typography>
               </Alert>
             )}
 
           {/* New Date Selection */}
-          <div>
-            <Label htmlFor="newDate" className="text-base font-medium">
+          <Box>
+            <Typography variant="body2" fontWeight={600} gutterBottom>
               New Pickup Date *
-            </Label>
-            <Input
-              id="newDate"
+            </Typography>
+            <TextField
+              fullWidth
               type="date"
               value={newDate}
               onChange={(e) => setNewDate(e.target.value)}
-              min={minDate}
-              className="mt-2"
+              inputProps={{ min: minDate }}
             />
-          </div>
+          </Box>
 
           {/* New Time Selection */}
-          <div>
-            <Label className="text-base font-medium mb-3 block">
+          <FormControl component="fieldset">
+            <FormLabel
+              component="legend"
+              sx={{ mb: 1.5, fontWeight: 600, fontSize: "0.875rem" }}
+            >
               Preferred Time Slot *
-            </Label>
-            <RadioGroup value={newTime} onValueChange={setNewTime}>
-              <div className="grid grid-cols-2 gap-3">
+            </FormLabel>
+            <RadioGroup value={newTime} onChange={(e) => setNewTime(e.target.value)}>
+              <Grid container spacing={1}>
                 {timeSlots.map((slot) => (
-                  <div key={slot} className="flex items-center space-x-2">
-                    <RadioGroupItem value={slot} id={slot} />
-                    <Label htmlFor={slot} className="cursor-pointer">
-                      {slot}
-                    </Label>
-                  </div>
+                  <Grid item xs={6} key={slot}>
+                    <FormControlLabel
+                      value={slot}
+                      control={<Radio size="small" />}
+                      label={slot}
+                    />
+                  </Grid>
                 ))}
-              </div>
+              </Grid>
             </RadioGroup>
-          </div>
+          </FormControl>
 
           {/* Reason Selection */}
-          <div>
-            <Label className="text-base font-medium mb-3 block">
+          <FormControl component="fieldset">
+            <FormLabel
+              component="legend"
+              sx={{ mb: 1.5, fontWeight: 600, fontSize: "0.875rem" }}
+            >
               Reason for Rescheduling *
-            </Label>
-            <RadioGroup value={reason} onValueChange={setReason}>
+            </FormLabel>
+            <RadioGroup value={reason} onChange={(e) => setReason(e.target.value)}>
               {reasons.map((reasonOption) => (
-                <div
+                <Box
                   key={reasonOption.value}
-                  className="flex items-start space-x-3"
+                  sx={{
+                    mb: 1.5,
+                    pb: 1.5,
+                    borderBottom:
+                      reasonOption.value !== reasons[reasons.length - 1].value
+                        ? "1px solid"
+                        : "none",
+                    borderColor: "divider",
+                  }}
                 >
-                  <RadioGroupItem
+                  <FormControlLabel
                     value={reasonOption.value}
-                    id={reasonOption.value}
-                    className="mt-1"
+                    control={<Radio />}
+                    label={
+                      <Box>
+                        <Typography variant="body2" fontWeight={500}>
+                          {reasonOption.label}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ mt: 0.5 }}
+                        >
+                          {reasonOption.description}
+                        </Typography>
+                      </Box>
+                    }
                   />
-                  <div className="flex-1">
-                    <Label
-                      htmlFor={reasonOption.value}
-                      className="font-medium cursor-pointer"
-                    >
-                      {reasonOption.label}
-                    </Label>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {reasonOption.description}
-                    </p>
-                  </div>
-                </div>
+                </Box>
               ))}
             </RadioGroup>
-          </div>
+          </FormControl>
 
           {/* Additional Notes */}
-          <div>
-            <Label htmlFor="note" className="text-base font-medium">
+          <Box>
+            <Typography variant="body2" fontWeight={600} gutterBottom>
               Additional Notes (Optional)
-            </Label>
-            <Textarea
-              id="note"
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
               placeholder="Any specific instructions or additional information..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="mt-2"
-              rows={3}
             />
-          </div>
+          </Box>
 
           {error && (
-            <Alert className="border-red-200 bg-red-50">
-              <AlertDescription className="text-red-700">
-                {error}
-              </AlertDescription>
+            <Alert severity="error">
+              <Typography variant="body2">{error}</Typography>
             </Alert>
           )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleReschedule}
-            disabled={loading || !newDate || !newTime || !reason}
-          >
-            {loading ? "Rescheduling..." : "Reschedule Pickup"}
-          </Button>
-        </DialogFooter>
+        </Stack>
       </DialogContent>
+
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button onClick={handleClose} disabled={loading} variant="outlined">
+          Cancel
+        </Button>
+        <Button
+          onClick={handleReschedule}
+          disabled={loading || !newDate || !newTime || !reason}
+          variant="contained"
+        >
+          {loading ? "Rescheduling..." : "Reschedule Pickup"}
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 }

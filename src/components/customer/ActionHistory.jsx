@@ -1,70 +1,63 @@
 /** route: src/components/customer/ActionHistory.jsx */
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
-  History,
-  User,
-  Shield,
-  Ban,
-  RotateCcw,
-  Edit,
-  CheckCircle,
-  Clock,
-} from "lucide-react";
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Chip,
+  Stack,
+  Divider,
+} from "@mui/material";
+import {
+  History as HistoryIcon,
+  Person as UserIcon,
+  AdminPanelSettings as ShieldIcon,
+  Block as BanIcon,
+  Refresh as RotateIcon,
+  Edit as EditIcon,
+  CheckCircle as CheckCircleIcon,
+  Schedule as ClockIcon,
+} from "@mui/icons-material";
 
 export default function ActionHistory({ actions = [] }) {
-  const getActionIcon = (action) => {
-    switch (action) {
-      case "cancelled":
-        return <Ban className="h-4 w-4 text-red-600" />;
-      case "rescheduled":
-        return <RotateCcw className="h-4 w-4 text-blue-600" />;
-      case "modified":
-        return <Edit className="h-4 w-4 text-orange-600" />;
-      case "accepted":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case "pickup_scheduled":
-        return <Clock className="h-4 w-4 text-purple-600" />;
-      default:
-        return <History className="h-4 w-4 text-gray-600" />;
-    }
-  };
+  const getActionConfig = (action) => {
+    const configs = {
+      cancelled: {
+        icon: <BanIcon sx={{ fontSize: 18 }} />,
+        label: "Cancelled",
+        color: "error",
+      },
+      rescheduled: {
+        icon: <RotateIcon sx={{ fontSize: 18 }} />,
+        label: "Rescheduled",
+        color: "info",
+      },
+      modified: {
+        icon: <EditIcon sx={{ fontSize: 18 }} />,
+        label: "Modified",
+        color: "warning",
+      },
+      accepted: {
+        icon: <CheckCircleIcon sx={{ fontSize: 18 }} />,
+        label: "Accepted",
+        color: "success",
+      },
+      pickup_scheduled: {
+        icon: <ClockIcon sx={{ fontSize: 18 }} />,
+        label: "Pickup Scheduled",
+        color: "secondary",
+      },
+    };
 
-  const getActionColor = (action) => {
-    switch (action) {
-      case "cancelled":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "rescheduled":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "modified":
-        return "bg-orange-100 text-orange-800 border-orange-200";
-      case "accepted":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "pickup_scheduled":
-        return "bg-purple-100 text-purple-800 border-purple-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const getActionLabel = (action) => {
-    switch (action) {
-      case "cancelled":
-        return "Cancelled";
-      case "rescheduled":
-        return "Rescheduled";
-      case "modified":
-        return "Modified";
-      case "accepted":
-        return "Accepted";
-      case "pickup_scheduled":
-        return "Pickup Scheduled";
-      default:
-        return action;
-    }
+    return (
+      configs[action] || {
+        icon: <HistoryIcon sx={{ fontSize: 18 }} />,
+        label: action,
+        color: "default",
+      }
+    );
   };
 
   const formatDate = (dateString) => {
@@ -81,17 +74,22 @@ export default function ActionHistory({ actions = [] }) {
   if (!actions || actions.length === 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="h-5 w-5 text-blue-600" />
-            Action History
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-6">
-            <History className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No actions recorded yet</p>
-          </div>
+        <CardContent sx={{ p: 3 }}>
+          <Stack direction="row" spacing={1} alignItems="center" mb={2}>
+            <HistoryIcon color="primary" />
+            <Typography variant="h6" fontWeight={600}>
+              Action History
+            </Typography>
+          </Stack>
+          <Divider sx={{ mb: 3 }} />
+          <Box sx={{ textAlign: "center", py: 4 }}>
+            <HistoryIcon
+              sx={{ fontSize: 64, color: "action.disabled", mb: 2 }}
+            />
+            <Typography color="text.secondary">
+              No actions recorded yet
+            </Typography>
+          </Box>
         </CardContent>
       </Card>
     );
@@ -104,91 +102,134 @@ export default function ActionHistory({ actions = [] }) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <History className="h-5 w-5 text-blue-600" />
-          Action History
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {sortedActions.map((action, index) => (
-            <div key={index}>
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-1">
-                  {getActionIcon(action.action)}
-                </div>
+      <CardContent sx={{ p: 3 }}>
+        <Stack direction="row" spacing={1} alignItems="center" mb={2}>
+          <HistoryIcon color="primary" />
+          <Typography variant="h6" fontWeight={600}>
+            Action History
+          </Typography>
+        </Stack>
+        <Divider sx={{ mb: 3 }} />
+        
+        <Stack spacing={3}>
+          {sortedActions.map((action, index) => {
+            const config = getActionConfig(action.action);
+            
+            return (
+              <Box key={index}>
+                <Stack direction="row" spacing={2} alignItems="flex-start">
+                  {/* Action Icon */}
+                  <Box
+                    sx={{
+                      mt: 0.5,
+                      color: `${config.color}.main`,
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    {config.icon}
+                  </Box>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge className={getActionColor(action.action)}>
-                      {getActionLabel(action.action)}
-                    </Badge>
-                    <span className="text-sm text-gray-500">
-                      {formatDate(action.timestamp)}
-                    </span>
-                    {action.customerInitiated && (
-                      <Badge variant="outline" className="text-xs">
-                        <User className="h-3 w-3 mr-1" />
-                        You
-                      </Badge>
-                    )}
-                    {!action.customerInitiated && (
-                      <Badge variant="outline" className="text-xs">
-                        <Shield className="h-3 w-3 mr-1" />
-                        Admin
-                      </Badge>
-                    )}
-                  </div>
-
-                  {action.reason && (
-                    <p className="text-sm text-gray-700 mb-1">
-                      <strong>Reason:</strong>{" "}
-                      {action.reason.replace(/_/g, " ")}
-                    </p>
-                  )}
-
-                  {action.note && (
-                    <p className="text-sm text-gray-600 mb-1">
-                      <strong>Note:</strong> {action.note}
-                    </p>
-                  )}
-
-                  {action.details && typeof action.details === "object" && (
-                    <div className="text-sm text-gray-600">
-                      {action.action === "rescheduled" &&
-                        action.details.originalDate && (
-                          <div>
-                            <strong>Original:</strong>{" "}
-                            {new Date(
-                              action.details.originalDate
-                            ).toLocaleDateString()}{" "}
-                            at {action.details.originalTime}
-                            <br />
-                            <strong>New:</strong>{" "}
-                            {new Date(
-                              action.details.newDate
-                            ).toLocaleDateString()}{" "}
-                            at {action.details.newTime}
-                          </div>
-                        )}
-                      {action.action === "modified" && (
-                        <div>
-                          <strong>Updated:</strong>{" "}
-                          {Object.keys(action.details).join(", ")}
-                        </div>
+                  {/* Action Details */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    {/* Action Header */}
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      flexWrap="wrap"
+                      mb={1}
+                    >
+                      <Chip
+                        label={config.label}
+                        color={config.color}
+                        size="small"
+                        sx={{ fontWeight: 600 }}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {formatDate(action.timestamp)}
+                      </Typography>
+                      {action.customerInitiated ? (
+                        <Chip
+                          icon={<UserIcon sx={{ fontSize: 14 }} />}
+                          label="You"
+                          variant="outlined"
+                          size="small"
+                          sx={{ height: 24, fontSize: "0.75rem" }}
+                        />
+                      ) : (
+                        <Chip
+                          icon={<ShieldIcon sx={{ fontSize: 14 }} />}
+                          label="Admin"
+                          variant="outlined"
+                          size="small"
+                          sx={{ height: 24, fontSize: "0.75rem" }}
+                        />
                       )}
-                    </div>
-                  )}
-                </div>
-              </div>
+                    </Stack>
 
-              {index < sortedActions.length - 1 && (
-                <Separator className="mt-4" />
-              )}
-            </div>
-          ))}
-        </div>
+                    {/* Reason */}
+                    {action.reason && (
+                      <Typography
+                        variant="body2"
+                        color="text.primary"
+                        sx={{ mb: 0.5 }}
+                      >
+                        <strong>Reason:</strong>{" "}
+                        {action.reason.replace(/_/g, " ")}
+                      </Typography>
+                    )}
+
+                    {/* Note */}
+                    {action.note && (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 0.5 }}
+                      >
+                        <strong>Note:</strong> {action.note}
+                      </Typography>
+                    )}
+
+                    {/* Details */}
+                    {action.details && typeof action.details === "object" && (
+                      <Box sx={{ mt: 1 }}>
+                        {/* Reschedule Details */}
+                        {action.action === "rescheduled" &&
+                          action.details.originalDate && (
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Original:</strong>{" "}
+                              {new Date(
+                                action.details.originalDate
+                              ).toLocaleDateString()}{" "}
+                              at {action.details.originalTime}
+                              <br />
+                              <strong>New:</strong>{" "}
+                              {new Date(
+                                action.details.newDate
+                              ).toLocaleDateString()}{" "}
+                              at {action.details.newTime}
+                            </Typography>
+                          )}
+                        
+                        {/* Modification Details */}
+                        {action.action === "modified" && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Updated:</strong>{" "}
+                            {Object.keys(action.details).join(", ")}
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+                </Stack>
+
+                {/* Divider between actions */}
+                {index < sortedActions.length - 1 && <Divider sx={{ mt: 3 }} />}
+              </Box>
+            );
+          })}
+        </Stack>
       </CardContent>
     </Card>
   );

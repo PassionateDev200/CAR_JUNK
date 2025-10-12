@@ -2,18 +2,25 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { User, Mail, Phone, MapPin, Edit } from "lucide-react";
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Alert,
+  Box,
+  Typography,
+  Stack,
+  InputAdornment,
+} from "@mui/material";
+import {
+  Person as UserIcon,
+  Email as EmailIcon,
+  Phone as PhoneIcon,
+  Edit as EditIcon,
+} from "@mui/icons-material";
 import { updateContactInfo } from "@/lib/quoteApi";
 
 export default function UpdateInfoDialog({
@@ -103,79 +110,104 @@ export default function UpdateInfoDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Edit className="h-5 w-5 text-blue-600" />
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: { borderRadius: 2 },
+      }}
+    >
+      <DialogTitle>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <EditIcon color="primary" />
+          <Typography variant="h6" fontWeight={600}>
             Update Contact Information
-          </DialogTitle>
-        </DialogHeader>
+          </Typography>
+        </Stack>
+      </DialogTitle>
 
-        <div className="space-y-4">
+      <DialogContent dividers>
+        <Stack spacing={3}>
           {/* Name Field */}
-          <div>
-            <Label htmlFor="name" className="flex items-center gap-2 mb-2">
-              <User className="h-4 w-4" />
+          <Box>
+            <Typography variant="body2" fontWeight={600} gutterBottom>
               Full Name *
-            </Label>
-            <Input
-              id="name"
-              type="text"
+            </Typography>
+            <TextField
+              fullWidth
               placeholder="Enter your full name"
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <UserIcon sx={{ color: "text.secondary" }} />
+                  </InputAdornment>
+                ),
+              }}
             />
-          </div>
+          </Box>
 
           {/* Email Field */}
-          <div>
-            <Label htmlFor="email" className="flex items-center gap-2 mb-2">
-              <Mail className="h-4 w-4" />
+          <Box>
+            <Typography variant="body2" fontWeight={600} gutterBottom>
               Email Address *
-            </Label>
-            <Input
-              id="email"
+            </Typography>
+            <TextField
+              fullWidth
               type="email"
               placeholder="Enter your email address"
               value={formData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon sx={{ color: "text.secondary" }} />
+                  </InputAdornment>
+                ),
+              }}
             />
-          </div>
+          </Box>
 
           {/* Phone Field */}
-          <div>
-            <Label htmlFor="phone" className="flex items-center gap-2 mb-2">
-              <Phone className="h-4 w-4" />
+          <Box>
+            <Typography variant="body2" fontWeight={600} gutterBottom>
               Phone Number *
-            </Label>
-            <Input
-              id="phone"
+            </Typography>
+            <TextField
+              fullWidth
               type="tel"
               placeholder="Enter your phone number"
               value={formData.phone}
               onChange={(e) => handleInputChange("phone", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PhoneIcon sx={{ color: "text.secondary" }} />
+                  </InputAdornment>
+                ),
+              }}
             />
-          </div>
+          </Box>
 
           {error && (
-            <Alert className="border-red-200 bg-red-50">
-              <AlertDescription className="text-red-700">
-                {error}
-              </AlertDescription>
+            <Alert severity="error">
+              <Typography variant="body2">{error}</Typography>
             </Alert>
           )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button onClick={handleUpdate} disabled={loading}>
-            {loading ? "Updating..." : "Update Information"}
-          </Button>
-        </DialogFooter>
+        </Stack>
       </DialogContent>
+
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button onClick={handleClose} disabled={loading} variant="outlined">
+          Cancel
+        </Button>
+        <Button onClick={handleUpdate} disabled={loading} variant="contained">
+          {loading ? "Updating..." : "Update Information"}
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 }

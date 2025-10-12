@@ -3,64 +3,65 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  Car,
-  Calendar,
-  User,
-  Phone,
-  Mail,
-  MapPin,
-  XCircle,
-  Edit,
-  Ban,
-} from "lucide-react";
+  Box,
+  Card,
+  CardContent,
+  Button,
+  Typography,
+  Stack,
+  Divider,
+  Alert,
+  AlertTitle,
+  Chip,
+} from "@mui/material";
+import {
+  DirectionsCar as CarIcon,
+  Event as CalendarIcon,
+  Person as UserIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon,
+  LocationOn as LocationIcon,
+  Cancel as CancelIcon,
+  Edit as EditIcon,
+  Block as BlockIcon,
+} from "@mui/icons-material";
 
 import CancelDialog from "./CancelDialog";
 import RescheduleDialog from "./RescheduleDialog";
-import ScheduleDialog from "./ScheduleDialog"; // ✅ NEW: Import ScheduleDialog
+import ScheduleDialog from "./ScheduleDialog";
 import UpdateInfoDialog from "./UpdateInfoDialog";
 import ActionHistory from "./ActionHistory";
 
 export default function QuoteManager({ quote, onQuoteUpdate }) {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
-  const [showScheduleDialog, setShowScheduleDialog] = useState(false); // ✅ NEW: Schedule dialog state
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case "pending":
-        return "bg-amber-100 text-amber-800 border-amber-200";
-      case "accepted":
-      case "pickup_scheduled":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "customer_cancelled":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "rescheduled":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "expired":
-        return "bg-gray-100 text-gray-800 border-gray-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
+    const colors = {
+      pending: "warning",
+      accepted: "success",
+      pickup_scheduled: "success",
+      customer_cancelled: "error",
+      rescheduled: "info",
+      expired: "default",
+    };
+    return colors[status] || "default";
   };
 
   const handleActionComplete = (updatedQuote) => {
     console.log("handleActionComplete ===> ", updatedQuote);
-    // Update the quote state with the new data from the API
     onQuoteUpdate(updatedQuote);
     setActionLoading(false);
     setShowCancelDialog(false);
     setShowRescheduleDialog(false);
-    setShowScheduleDialog(false); // ✅ NEW: Close schedule dialog
+    setShowScheduleDialog(false);
     setShowUpdateDialog(false);
   };
 
-  // ✅ FIXED: More robust logic for determining if quote can be cancelled
   const canCancelQuote = () => {
     const nonCancellableStatuses = [
       "customer_cancelled",
@@ -69,11 +70,9 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
       "completed",
     ];
     const isNotExpired = !isExpired;
-
     return !nonCancellableStatuses.includes(quote.status) && isNotExpired;
   };
 
-  // ✅ FIXED: More robust logic for determining if pickup can be rescheduled
   const canRescheduleQuote = () => {
     const reschedulableStatuses = [
       "accepted",
@@ -81,16 +80,13 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
       "rescheduled",
     ];
     const isNotExpired = !isExpired;
-
     return reschedulableStatuses.includes(quote.status) && isNotExpired;
   };
 
-  // ✅ NEW: Logic for determining if pickup can be scheduled
   const canSchedulePickup = () => {
-    const schedulableStatuses = ["accepted"]; // Only accepted quotes can be scheduled
+    const schedulableStatuses = ["accepted"];
     const isNotExpired = !isExpired;
     const hasNoScheduledPickup = !quote.pickupDetails?.scheduledDate;
-
     return (
       schedulableStatuses.includes(quote.status) &&
       isNotExpired &&
@@ -101,63 +97,86 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
   const isExpired = new Date() > new Date(quote.expiresAt);
 
   return (
-    <div className="space-y-6">
-      {/* Status Alert */}
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Status Alerts */}
       {isExpired && (
-        <Alert className="border-red-200 bg-red-50">
-          <XCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-700">
-            This quote has expired. Please get a new quote if you're still
-            interested.
-          </AlertDescription>
+        <Alert severity="error" icon={<CancelIcon />}>
+          <AlertTitle sx={{ fontWeight: 600 }}>Quote Expired</AlertTitle>
+          This quote has expired. Please get a new quote if you're still
+          interested.
         </Alert>
       )}
 
       {quote.status === "customer_cancelled" && (
-        <Alert className="border-gray-200 bg-gray-50">
-          <Ban className="h-4 w-4 text-gray-600" />
-          <AlertDescription className="text-gray-700">
-            This quote has been cancelled. You can get a new quote if you change
-            your mind.
-          </AlertDescription>
+        <Alert severity="info" icon={<BlockIcon />}>
+          <AlertTitle sx={{ fontWeight: 600 }}>Quote Cancelled</AlertTitle>
+          This quote has been cancelled. You can get a new quote if you change
+          your mind.
         </Alert>
       )}
 
-      {/* Vehicle Information */}
+      {/* Vehicle Information Card */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Car className="h-5 w-5 text-blue-600" />
-            Vehicle Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Vehicle</p>
-              <p className="font-medium">{quote.vehicleName}</p>
-            </div>
+        <CardContent sx={{ p: 3 }}>
+          <Stack direction="row" spacing={1} alignItems="center" mb={2}>
+            <CarIcon color="primary" />
+            <Typography variant="h6" fontWeight={600}>
+              Vehicle Information
+            </Typography>
+          </Stack>
+          <Divider sx={{ mb: 2 }} />
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Vehicle
+              </Typography>
+              <Typography variant="body1" fontWeight={500}>
+                {quote.vehicleName}
+              </Typography>
+            </Box>
             {quote.vin && (
-              <div>
-                <p className="text-sm text-gray-600">VIN</p>
-                <p className="font-mono text-sm">{quote.vin}</p>
-              </div>
+              <Box>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  VIN
+                </Typography>
+                <Typography
+                  variant="body2"
+                  fontWeight={500}
+                  sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}
+                >
+                  {quote.vin}
+                </Typography>
+              </Box>
             )}
-          </div>
+          </Box>
         </CardContent>
       </Card>
 
-      {/* Customer Information */}
+      {/* Customer Information Card */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-blue-600" />
-              Contact Information
-            </CardTitle>
+        <CardContent sx={{ p: 3 }}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            mb={2}
+          >
+            <Stack direction="row" spacing={1} alignItems="center">
+              <UserIcon color="primary" />
+              <Typography variant="h6" fontWeight={600}>
+                Contact Information
+              </Typography>
+            </Stack>
             <Button
-              variant="outline"
-              size="sm"
+              variant="outlined"
+              size="small"
+              startIcon={<EditIcon />}
               onClick={() => setShowUpdateDialog(true)}
               disabled={
                 !["pending", "accepted", "pickup_scheduled"].includes(
@@ -165,136 +184,152 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
                 )
               }
             >
-              <Edit className="h-4 w-4 mr-2" />
               Update
             </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-gray-500" />
-              <span>{quote.customer.name}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-gray-500" />
-              <span>{quote.customer.email}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-gray-500" />
-              <span>{quote.customer.phone}</span>
-            </div>
+          </Stack>
+          <Divider sx={{ mb: 2 }} />
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
+              gap: 2,
+            }}
+          >
+            <Stack direction="row" spacing={1} alignItems="center">
+              <UserIcon sx={{ fontSize: 18, color: "text.secondary" }} />
+              <Typography variant="body1">{quote.customer.name}</Typography>
+            </Stack>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <EmailIcon sx={{ fontSize: 18, color: "text.secondary" }} />
+              <Typography variant="body1">{quote.customer.email}</Typography>
+            </Stack>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <PhoneIcon sx={{ fontSize: 18, color: "text.secondary" }} />
+              <Typography variant="body1">{quote.customer.phone}</Typography>
+            </Stack>
             {quote.customer.address && (
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-gray-500" />
-                <span>{quote.customer.address}</span>
-              </div>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <LocationIcon sx={{ fontSize: 18, color: "text.secondary" }} />
+                <Typography variant="body1">{quote.customer.address}</Typography>
+              </Stack>
             )}
-          </div>
+          </Box>
         </CardContent>
       </Card>
 
-      {/* Pickup Details */}
+      {/* Pickup Details Card */}
       {quote.pickupDetails &&
         (quote.pickupDetails.scheduledDate ||
           quote.pickupDetails.scheduledTime) && (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-600" />
-                Pickup Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent sx={{ p: 3 }}>
+              <Stack direction="row" spacing={1} alignItems="center" mb={2}>
+                <CalendarIcon color="primary" />
+                <Typography variant="h6" fontWeight={600}>
+                  Pickup Details
+                </Typography>
+              </Stack>
+              <Divider sx={{ mb: 2 }} />
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
+                  gap: 2,
+                }}
+              >
                 {quote.pickupDetails.scheduledDate && (
-                  <div>
-                    <p className="text-sm text-gray-600">Scheduled Date</p>
-                    <p className="font-medium">
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                    >
+                      Scheduled Date
+                    </Typography>
+                    <Typography variant="body1" fontWeight={500}>
                       {new Date(
                         quote.pickupDetails.scheduledDate
                       ).toLocaleDateString()}
-                    </p>
-                  </div>
+                    </Typography>
+                  </Box>
                 )}
                 {quote.pickupDetails.scheduledTime && (
-                  <div>
-                    <p className="text-sm text-gray-600">Scheduled Time</p>
-                    <p className="font-medium">
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                    >
+                      Scheduled Time
+                    </Typography>
+                    <Typography variant="body1" fontWeight={500}>
                       {quote.pickupDetails.scheduledTime}
-                    </p>
-                  </div>
+                    </Typography>
+                  </Box>
                 )}
                 {quote.pickupDetails.specialInstructions && (
-                  <div className="md:col-span-2">
-                    <p className="text-sm text-gray-600">
+                  <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                    >
                       Special Instructions
-                    </p>
-                    <p className="font-medium">
+                    </Typography>
+                    <Typography variant="body1" fontWeight={500}>
                       {quote.pickupDetails.specialInstructions}
-                    </p>
-                  </div>
+                    </Typography>
+                  </Box>
                 )}
-              </div>
+              </Box>
             </CardContent>
           </Card>
         )}
 
-      {/* Action Buttons */}
+      {/* Action Buttons Card */}
       <Card>
-        <CardHeader>
-          <CardTitle>Available Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            {/* ✅ FIXED: Use local logic instead of quote.canCancel */}
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight={600} mb={2}>
+            Available Actions
+          </Typography>
+          <Divider sx={{ mb: 3 }} />
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            {/* Cancel Quote Button */}
             {canCancelQuote() && (
               <Button
-                variant="destructive"
+                variant="outlined"
+                color="error"
+                startIcon={<BlockIcon />}
                 onClick={() => setShowCancelDialog(true)}
                 disabled={actionLoading}
+                sx={{ minWidth: { sm: 160 } }}
               >
-                <Ban className="h-4 w-4 mr-2" />
                 Cancel Quote
               </Button>
             )}
 
-            {/* ✅ NEW: Schedule/Reschedule Pickup Button */}
-            {/* {canSchedulePickup() && ( */}
+            {/* Schedule/Reschedule Pickup Button */}
             <Button
-              variant="default"
+              variant="contained"
+              startIcon={<CalendarIcon />}
               onClick={() => setShowScheduleDialog(true)}
               disabled={actionLoading}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              sx={{ minWidth: { sm: 180 } }}
             >
-              <Calendar className="h-4 w-4 mr-2" />
-              {quote.pickupDetails?.scheduledDate ? "Reschedule Pickup" : "Schedule Pickup"}
+              {quote.pickupDetails?.scheduledDate
+                ? "Reschedule Pickup"
+                : "Schedule Pickup"}
             </Button>
-            {/* )} */}
 
-            {/* ✅ FIXED: Use local logic instead of quote.canReschedule */}
-            {/* {canRescheduleQuote() && (
-              <Button
-                variant="outline"
-                onClick={() => setShowRescheduleDialog(true)}
-                disabled={actionLoading}
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Reschedule Pickup
-              </Button>
-            )} */}
-
-            {/* ✅ UPDATED: Updated condition to include schedule check */}
+            {/* No actions available message */}
             {!canCancelQuote() &&
               !canRescheduleQuote() &&
               !canSchedulePickup() && (
-                <Alert className="border-gray-200 bg-gray-50">
-                  <AlertDescription className="text-gray-700">
-                    No actions available for this quote in its current status.
-                  </AlertDescription>
+                <Alert severity="info" sx={{ flex: 1 }}>
+                  No actions available for this quote in its current status.
                 </Alert>
               )}
-          </div>
+          </Stack>
         </CardContent>
       </Card>
 
@@ -311,7 +346,6 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
         setLoading={setActionLoading}
       />
 
-      {/* ✅ NEW: Schedule Dialog */}
       <ScheduleDialog
         open={showScheduleDialog}
         onOpenChange={setShowScheduleDialog}
@@ -338,6 +372,6 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
         loading={actionLoading}
         setLoading={setActionLoading}
       />
-    </div>
+    </Box>
   );
 }

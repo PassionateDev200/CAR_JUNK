@@ -1,26 +1,29 @@
 /** route:  src/components/customer/ScheduleDialog.jsx*/
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Alert,
+  AlertTitle,
+  Box,
+  Typography,
+  MenuItem,
+  Stack,
+  InputAdornment,
+  CircularProgress,
+} from "@mui/material";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Calendar, Clock, AlertCircle, MapPin, Phone, CheckCircle } from "lucide-react";
+  Event as CalendarIcon,
+  Phone as PhoneIcon,
+  LocationOn as LocationIcon,
+  Warning as WarningIcon,
+  CheckCircle as CheckCircleIcon,
+} from "@mui/icons-material";
 import axios from "axios";
 
 export default function ScheduleDialog({
@@ -34,17 +37,18 @@ export default function ScheduleDialog({
   // Check if there's already a scheduled pickup
   const hasExistingSchedule = quote?.pickupDetails?.scheduledDate;
   const isRescheduling = hasExistingSchedule && quote?.status === "pickup_scheduled";
+  
   const [formData, setFormData] = useState({
     scheduledDate: "",
-    pickupWindow: "", // Changed from scheduledTime to pickupWindow
+    pickupWindow: "",
     specialInstructions: "",
     contactPhone: quote?.customer?.phone || quote?.sellerInfo?.phone || "",
     pickupAddress: quote?.customer?.address || quote?.sellerInfo?.address || "",
   });
+  
   const [error, setError] = useState("");
   const [addressVerifying, setAddressVerifying] = useState(false);
   const [addressVerified, setAddressVerified] = useState(false);
-  const router = useRouter();
 
   // Update state field
   const handleInputChange = (field, value) => {
@@ -133,7 +137,7 @@ export default function ScheduleDialog({
       const response = await axios.post("/api/quote/schedule-pickup", {
         accessToken: quote.accessToken,
         scheduledDate: formData.scheduledDate,
-        pickupWindow: formData.pickupWindow, // Changed from scheduledTime/timeSlot
+        pickupWindow: formData.pickupWindow,
         specialInstructions: formData.specialInstructions,
         contactPhone: formData.contactPhone,
         pickupAddress: formData.pickupAddress,
@@ -170,23 +174,18 @@ export default function ScheduleDialog({
   const pickupWindows = [
     {
       value: "morning",
-      label: "Morning",
-      time: "8:00 AM - 12:00 PM",
-      description: "Early pickup window"
+      label: "Morning (8:00 AM - 12:00 PM)",
     },
     {
       value: "afternoon",
-      label: "Afternoon",
-      time: "12:00 PM - 4:00 PM",
-      description: "Midday pickup window"
+      label: "Afternoon (12:00 PM - 4:00 PM)",
     },
     {
       value: "evening",
-      label: "Evening",
-      time: "4:00 PM - 9:00 PM",
-      description: "Late pickup window"
+      label: "Evening (4:00 PM - 9:00 PM)",
     },
   ];
+
   // Date range: tomorrow to +30d
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -197,184 +196,203 @@ export default function ScheduleDialog({
   const maxDateString = maxDate.toISOString().split("T")[0];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-blue-600" />
+    <Dialog
+      open={open}
+      onClose={() => onOpenChange(false)}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: { borderRadius: 2 },
+      }}
+    >
+      <DialogTitle>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <CalendarIcon color="primary" />
+          <Typography variant="h6" fontWeight={600}>
             {isRescheduling ? "Reschedule Pickup" : "Schedule Pickup"}
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <Alert className="border-red-200 bg-red-50">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-700">
+          </Typography>
+        </Stack>
+      </DialogTitle>
+
+      <DialogContent dividers>
+        <Box component="form" onSubmit={handleSubmit}>
+          <Stack spacing={3}>
+            {error && (
+              <Alert severity="error" icon={<WarningIcon />}>
                 {error}
-              </AlertDescription>
-            </Alert>
-          )}
+              </Alert>
+            )}
 
-          {/* Date */}
-          <div className="space-y-2">
-            <Label htmlFor="scheduledDate">Pickup Date *</Label>
-            <Input
-              id="scheduledDate"
-              type="date"
-              min={minDate}
-              max={maxDateString}
-              value={formData.scheduledDate}
-              onChange={(e) =>
-                handleInputChange("scheduledDate", e.target.value)
-              }
-              required
-            />
-          </div>
+            {/* Date */}
+            <Box>
+              <Typography variant="body2" fontWeight={600} gutterBottom>
+                Pickup Date *
+              </Typography>
+              <TextField
+                fullWidth
+                type="date"
+                inputProps={{
+                  min: minDate,
+                  max: maxDateString,
+                }}
+                value={formData.scheduledDate}
+                onChange={(e) => handleInputChange("scheduledDate", e.target.value)}
+                required
+              />
+            </Box>
 
-          {/* Pickup Time Window */}
-          <div className="space-y-2">
-            <Label htmlFor="pickupWindow">Pickup Time Window *</Label>
-            <Select
-              value={formData.pickupWindow}
-              onValueChange={(value) =>
-                handleInputChange("pickupWindow", value)
-              }
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select pickup window" />
-              </SelectTrigger>
-              <SelectContent>
+            {/* Pickup Time Window */}
+            <Box>
+              <Typography variant="body2" fontWeight={600} gutterBottom>
+                Pickup Time Window *
+              </Typography>
+              <TextField
+                fullWidth
+                select
+                value={formData.pickupWindow}
+                onChange={(e) => handleInputChange("pickupWindow", e.target.value)}
+                placeholder="Select pickup window"
+                required
+              >
                 {pickupWindows.map((window) => (
-                  <SelectItem key={window.value} value={window.value}>
-                    <div className="flex flex-col">
-                      <span className="font-semibold">{window.label}</span>
-                      <span className="text-sm text-gray-500">{window.time}</span>
-                    </div>
-                  </SelectItem>
+                  <MenuItem key={window.value} value={window.value}>
+                    {window.label}
+                  </MenuItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
+              </TextField>
+            </Box>
 
-          {/* Phone */}
-          <div className="space-y-2">
-            <Label htmlFor="contactPhone">Contact Phone *</Label>
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-gray-400" />
-              <Input
-                id="contactPhone"
+            {/* Phone */}
+            <Box>
+              <Typography variant="body2" fontWeight={600} gutterBottom>
+                Contact Phone *
+              </Typography>
+              <TextField
+                fullWidth
                 placeholder="e.g. (555) 123-4567"
                 value={formData.contactPhone}
-                onChange={(e) =>
-                  handleInputChange("contactPhone", e.target.value)
-                }
+                onChange={(e) => handleInputChange("contactPhone", e.target.value)}
                 required
-                maxLength={20}
+                inputProps={{ maxLength: 20 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PhoneIcon sx={{ color: "text.secondary" }} />
+                    </InputAdornment>
+                  ),
+                }}
               />
-            </div>
-          </div>
+            </Box>
 
-          {/* Pickup Address */}
-          <div className="space-y-2">
-            <Label htmlFor="pickupAddress">Pickup Address *</Label>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                <Input
-                  id="pickupAddress"
-                  placeholder="Street, City, State, ZIP"
-                  value={formData.pickupAddress}
-                  onChange={(e) =>
-                    handleInputChange("pickupAddress", e.target.value)
-                  }
-                  required
-                  maxLength={200}
-                  className={addressVerified ? "border-green-500" : ""}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant={addressVerified ? "outline" : "secondary"}
-                  size="sm"
-                  onClick={verifyAddress}
-                  disabled={addressVerifying || !formData.pickupAddress || formData.pickupAddress.length < 10}
-                  className="flex-1"
-                >
-                  {addressVerifying ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Verifying...
-                    </>
+            {/* Pickup Address */}
+            <Box>
+              <Typography variant="body2" fontWeight={600} gutterBottom>
+                Pickup Address *
+              </Typography>
+              <TextField
+                fullWidth
+                placeholder="Street, City, State, ZIP"
+                value={formData.pickupAddress}
+                onChange={(e) => handleInputChange("pickupAddress", e.target.value)}
+                required
+                inputProps={{ maxLength: 200 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LocationIcon sx={{ color: "text.secondary" }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderColor: addressVerified ? "success.main" : undefined,
+                  },
+                }}
+              />
+              <Button
+                fullWidth
+                variant={addressVerified ? "outlined" : "text"}
+                color={addressVerified ? "success" : "primary"}
+                onClick={verifyAddress}
+                disabled={
+                  addressVerifying ||
+                  !formData.pickupAddress ||
+                  formData.pickupAddress.length < 10
+                }
+                sx={{ mt: 1 }}
+                startIcon={
+                  addressVerifying ? (
+                    <CircularProgress size={16} />
                   ) : addressVerified ? (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                      Address Verified
-                    </>
+                    <CheckCircleIcon />
                   ) : (
-                    <>
-                      <MapPin className="h-4 w-4 mr-2" />
-                      Verify Address
-                    </>
-                  )}
-                </Button>
-              </div>
+                    <LocationIcon />
+                  )
+                }
+              >
+                {addressVerifying
+                  ? "Verifying..."
+                  : addressVerified
+                  ? "Address Verified"
+                  : "Verify Address"}
+              </Button>
               {addressVerified && (
-                <p className="text-xs text-green-600 flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" />
+                <Typography
+                  variant="caption"
+                  color="success.main"
+                  sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 1 }}
+                >
+                  <CheckCircleIcon sx={{ fontSize: 14 }} />
                   Address verified and ready for pickup
-                </p>
+                </Typography>
               )}
-            </div>
-          </div>
+            </Box>
 
-          {/* Special Instructions */}
-          <div className="space-y-2">
-            <Label htmlFor="specialInstructions">
-              Special Instructions (Optional)
-            </Label>
-            <Textarea
-              id="specialInstructions"
-              placeholder="Any special instructions for pickup (e.g., gate code, parking location, etc.)"
-              value={formData.specialInstructions}
-              onChange={(e) =>
-                handleInputChange("specialInstructions", e.target.value)
-              }
-              rows={3}
-              maxLength={500}
-            />
-            <p className="text-xs text-gray-500">
-              {formData.specialInstructions.length}/500 characters
-            </p>
-          </div>
-
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  {isRescheduling ? "Rescheduling..." : "Scheduling..."}
-                </div>
-              ) : (
-                <>
-                  <Calendar className="h-4 w-4 mr-2" />
-                  {isRescheduling ? "Reschedule Pickup" : "Schedule Pickup"}
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
+            {/* Special Instructions */}
+            <Box>
+              <Typography variant="body2" fontWeight={600} gutterBottom>
+                Special Instructions (Optional)
+              </Typography>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                placeholder="Any special instructions for pickup (e.g., gate code, parking location, etc.)"
+                value={formData.specialInstructions}
+                onChange={(e) => handleInputChange("specialInstructions", e.target.value)}
+                inputProps={{ maxLength: 500 }}
+              />
+              <Typography variant="caption" color="text.secondary">
+                {formData.specialInstructions.length}/500 characters
+              </Typography>
+            </Box>
+          </Stack>
+        </Box>
       </DialogContent>
+
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button
+          onClick={() => onOpenChange(false)}
+          disabled={loading}
+          variant="outlined"
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          disabled={loading}
+          variant="contained"
+          startIcon={loading ? <CircularProgress size={16} /> : <CalendarIcon />}
+        >
+          {loading
+            ? isRescheduling
+              ? "Rescheduling..."
+              : "Scheduling..."
+            : isRescheduling
+            ? "Reschedule Pickup"
+            : "Schedule Pickup"}
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 }
