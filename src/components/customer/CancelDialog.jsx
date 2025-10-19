@@ -25,6 +25,7 @@ import {
   Cancel as CancelIcon,
 } from "@mui/icons-material";
 import { cancelQuote } from "@/lib/quoteApi";
+import { useVehicleDispatch, vehicleActions } from "@/contexts/VehicleContext";
 
 export default function CancelDialog({
   open,
@@ -34,6 +35,7 @@ export default function CancelDialog({
   loading,
   setLoading,
 }) {
+  const dispatch = useVehicleDispatch();
   const [reason, setReason] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
@@ -95,6 +97,21 @@ export default function CancelDialog({
       const result = await cancelQuote(quote.accessToken, reason, note);
 
       if (result.success) {
+        // Reset all vehicle data and clear localStorage
+        dispatch(vehicleActions.resetVehicleData());
+        
+        // Clear localStorage explicitly
+        localStorage.removeItem("vehicleQuoteData");
+        localStorage.removeItem("vehicleQuoteTimestamp");
+        
+        // Reset to first step
+        dispatch(vehicleActions.setCurrentStep(1));
+        dispatch(vehicleActions.setCurrentQuestion(0));
+        
+        // Scroll to top for better UX
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        
+        // Call the action complete handler
         onActionComplete(result.data.quote);
       } else {
         setError(result.error);
