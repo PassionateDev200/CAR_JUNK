@@ -15,6 +15,7 @@ import {
 import { Key, AlertCircle } from "lucide-react";
 import QuestionLayout from "./QuestionLayout";
 import { questionTheme } from "@/theme/questionTheme";
+import { useVehicle } from "@/contexts/VehicleContext";
 
 export default function KeyQuestion({
   vehicleDetails,
@@ -24,12 +25,20 @@ export default function KeyQuestion({
   questionNumber,
   totalQuestions,
 }) {
+  const vehicleState = useVehicle();
+  const { pricing } = vehicleState;
   const [selectedValue, setSelectedValue] = useState(currentAnswer || "");
   const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
     setSelectedValue(currentAnswer || "");
   }, [currentAnswer]);
+
+  // Calculate 20% penalty based on base price
+  const calculateKeyPenalty = () => {
+    const basePrice = pricing.basePrice || 500; // Default to $500 if not set
+    return Math.round(-basePrice * 0.20); // 20% discount as negative value
+  };
 
   const options = [
     {
@@ -45,9 +54,12 @@ export default function KeyQuestion({
     {
       value: "no_key",
       label: "No, I don't have a key",
-      priceAdjustment: null,
-      description: "No keys available - lost, broken, or with someone else",
-      isDisqualifying: true,
+      priceAdjustment: {
+        type: "key",
+        amount: calculateKeyPenalty(),
+      },
+      description: "No keys available - 20% price reduction will apply",
+      isDisqualifying: false,
     },
   ];
 
@@ -56,7 +68,8 @@ export default function KeyQuestion({
     const selectedOption = options.find((opt) => opt.value === value);
     setSelectedValue(value);
 
-    if (selectedOption.isDisqualifying) {
+    // Show informational warning for no key
+    if (value === "no_key") {
       setShowWarning(true);
     } else {
       setShowWarning(false);
@@ -66,14 +79,7 @@ export default function KeyQuestion({
   const handleNext = () => {
     if (selectedValue) {
       const selectedOption = options.find((opt) => opt.value === selectedValue);
-
-      if (selectedOption.isDisqualifying) {
-        setTimeout(() => {
-          onAnswer(selectedValue, selectedOption.priceAdjustment);
-        }, 1500);
-      } else {
-        onAnswer(selectedValue, selectedOption.priceAdjustment);
-      }
+      onAnswer(selectedValue, selectedOption.priceAdjustment);
     }
   };
 
@@ -90,7 +96,7 @@ export default function KeyQuestion({
     <QuestionLayout
       icon={Key}
       title={`Do you have a key for your ${getVehicleDisplayName()}?`}
-      description="We need a key to complete the vehicle purchase and pickup process."
+      description="Don't worry if you don't have a key - you can still sell your vehicle with a price adjustment."
       questionNumber={questionNumber}
       totalQuestions={totalQuestions}
       onPrevious={onPrevious}
@@ -100,20 +106,20 @@ export default function KeyQuestion({
       <Box sx={{ maxWidth: "700px", mx: "auto" }}>
         {showWarning && (
           <Alert
-            severity="error"
+            severity="warning"
             icon={<AlertCircle size={20} />}
             sx={{
               mb: 3,
               borderRadius: 2,
-              bgcolor: "#ffebee",
-              border: "1px solid #ffcdd2",
+              bgcolor: "#fff8e1",
+              border: "1px solid #ffecb3",
               "& .MuiAlert-message": {
-                color: "#d32f2f",
+                color: "#f57c00",
                 fontSize: "0.875rem",
               },
             }}
           >
-            We need a key to complete the vehicle purchase. We'll redirect you shortly.
+            No problem! You can still sell your vehicle. A 20% price reduction will be applied to account for the missing key.
           </Alert>
         )}
 

@@ -15,6 +15,7 @@ import {
 import { Battery, AlertCircle } from "lucide-react";
 import QuestionLayout from "./QuestionLayout";
 import { questionTheme } from "@/theme/questionTheme";
+import { useVehicle } from "@/contexts/VehicleContext";
 
 export default function BatteryQuestion({
   vehicleDetails,
@@ -24,12 +25,20 @@ export default function BatteryQuestion({
   questionNumber,
   totalQuestions,
 }) {
+  const vehicleState = useVehicle();
+  const { pricing } = vehicleState;
   const [selectedValue, setSelectedValue] = useState(currentAnswer || "");
   const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
     setSelectedValue(currentAnswer || "");
   }, [currentAnswer]);
+
+  // Calculate 20% penalty based on base price
+  const calculateBatteryPenalty = () => {
+    const basePrice = pricing.basePrice || 500; // Default to $500 if not set
+    return Math.round(-basePrice * 0.20); // 20% discount as negative value
+  };
 
   const options = [
     {
@@ -45,9 +54,12 @@ export default function BatteryQuestion({
     {
       value: "no_battery",
       label: "No, the battery doesn't work or is not installed",
-      priceAdjustment: null,
-      description: "Battery is dead, missing, or requires jump-start",
-      isDisqualifying: true,
+      priceAdjustment: {
+        type: "battery",
+        amount: calculateBatteryPenalty(),
+      },
+      description: "Battery is dead, missing, or requires jump-start - 20% price reduction will apply",
+      isDisqualifying: false,
     },
   ];
 
@@ -56,7 +68,8 @@ export default function BatteryQuestion({
     const selectedOption = options.find((opt) => opt.value === value);
     setSelectedValue(value);
 
-    if (selectedOption.isDisqualifying) {
+    // Show informational warning for no battery
+    if (value === "no_battery") {
       setShowWarning(true);
     } else {
       setShowWarning(false);
@@ -66,14 +79,7 @@ export default function BatteryQuestion({
   const handleNext = () => {
     if (selectedValue) {
       const selectedOption = options.find((opt) => opt.value === selectedValue);
-
-      if (selectedOption.isDisqualifying) {
-        setTimeout(() => {
-          onAnswer(selectedValue, selectedOption.priceAdjustment);
-        }, 1500);
-      } else {
-        onAnswer(selectedValue, selectedOption.priceAdjustment);
-      }
+      onAnswer(selectedValue, selectedOption.priceAdjustment);
     }
   };
 
@@ -90,7 +96,7 @@ export default function BatteryQuestion({
     <QuestionLayout
       icon={Battery}
       title={`Does your ${getVehicleDisplayName()} have a working battery?`}
-      description="We need to know if your car will start without needing to be jumped."
+      description="Don't worry if you don't have a working battery - you can still sell your vehicle with a price adjustment."
       questionNumber={questionNumber}
       totalQuestions={totalQuestions}
       onPrevious={onPrevious}
@@ -100,20 +106,20 @@ export default function BatteryQuestion({
       <Box sx={{ maxWidth: "700px", mx: "auto" }}>
         {showWarning && (
           <Alert
-            severity="error"
+            severity="warning"
             icon={<AlertCircle size={20} />}
             sx={{
               mb: 3,
               borderRadius: 2,
-              bgcolor: "#ffebee",
-              border: "1px solid #ffcdd2",
+              bgcolor: "#fff8e1",
+              border: "1px solid #ffecb3",
               "& .MuiAlert-message": {
-                color: "#d32f2f",
+                color: "#f57c00",
                 fontSize: "0.875rem",
               },
             }}
           >
-            A working battery is required for vehicle pickup. We'll redirect you shortly.
+            No problem! You can still sell your vehicle. A 20% price reduction will be applied to account for the battery issue.
           </Alert>
         )}
 

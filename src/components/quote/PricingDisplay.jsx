@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -49,13 +49,14 @@ export default function PricingDisplay() {
     conditionAnswers,
     zipCode,
     locationData,
+    sellerInfo: contextSellerInfo,
   } = vehicleState;
 
   const [sellerInfo, setSellerInfo] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
+    name: contextSellerInfo.name || "",
+    email: contextSellerInfo.email || "",
+    phone: contextSellerInfo.phone || "",
+    address: contextSellerInfo.address || "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,6 +64,23 @@ export default function PricingDisplay() {
   const [submissionError, setSubmissionError] = useState("");
   const [quoteId, setQuoteId] = useState("");
   const [accessToken, setAccessToken] = useState("");
+
+  // Update local state when context seller info changes (e.g., after login)
+  useEffect(() => {
+    // Only update if context has email and local state doesn't (prevents overwriting user edits)
+    setSellerInfo((prev) => {
+      // If context has email and we don't have one yet, use context values
+      if (contextSellerInfo.email && !prev.email) {
+        return {
+          name: contextSellerInfo.name || prev.name,
+          email: contextSellerInfo.email,
+          phone: contextSellerInfo.phone || prev.phone,
+          address: contextSellerInfo.address || prev.address,
+        };
+      }
+      return prev;
+    });
+  }, [contextSellerInfo.email, contextSellerInfo.name, contextSellerInfo.phone, contextSellerInfo.address]);
 
   const handleInputChange = (field, value) => {
     setSellerInfo((prev) => ({

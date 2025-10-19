@@ -108,7 +108,6 @@ const CONDITION_STEPS = [
     icon: Battery,
     label: "Battery",
     required: true,
-    disqualifyingAnswers: ["no_battery"],
   },
   {
     id: "key",
@@ -116,7 +115,6 @@ const CONDITION_STEPS = [
     icon: Key,
     label: "Key",
     required: true,
-    disqualifyingAnswers: ["no_key"],
   },
   {
     id: "drivability",
