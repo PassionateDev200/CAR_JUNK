@@ -286,7 +286,7 @@ export default function ScheduleDialog({
 
               <Grid item xs={12} sm={6}>
                 <Typography variant="body2" fontWeight={600} gutterBottom>
-                  Pickup Time Window *
+                  Pickup Time
                 </Typography>
                 <TextField
                   fullWidth
