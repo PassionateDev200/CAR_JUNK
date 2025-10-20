@@ -191,7 +191,7 @@ export default function PricingDisplay() {
 
             {/* Success Message */}
             <Typography variant="h4" fontWeight={600} gutterBottom>
-              Quote Submitted Successfully!
+              Submitted Successfully!
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
               We've received your quote and sent a confirmation email to your inbox.

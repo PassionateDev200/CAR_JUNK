@@ -309,19 +309,23 @@ export default function QuoteManager({ quote, onQuoteUpdate }) {
             )}
 
             {/* Schedule/Reschedule Pickup Button */}
-            {(canSchedulePickup() || canRescheduleQuote()) && (
               <Button
                 variant="contained"
                 startIcon={<CalendarIcon />}
                 onClick={() => setShowScheduleDialog(true)}
-                disabled={actionLoading}
+                disabled={
+                  actionLoading ||
+                  !["pending", "accepted", "pickup_scheduled", "rescheduled"].includes(
+                    quote.status
+                  ) ||
+                  isExpired
+                }
                 sx={{ minWidth: { sm: 180 } }}
               >
                 {quote.pickupDetails?.scheduledDate
                   ? "Reschedule Pickup"
                   : "Schedule Pickup"}
               </Button>
-            )}
 
             {/* No actions available message */}
             {!canCancelQuote() &&
