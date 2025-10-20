@@ -36,6 +36,10 @@ import {
   vehicleActions,
 } from "@/contexts/VehicleContext";
 import axios from "@/lib/axios";
+import TitleSpecificsModal from "@/components/customer/TitleSpecificsModal";
+import PickupLocationModal from "@/components/customer/PickupLocationModal";
+import PickupSchedulingModal from "@/components/customer/PickupSchedulingModal";
+import PaymentDetailsModal from "@/components/customer/PaymentDetailsModal";
 
 export default function PricingDisplay() {
   const vehicleState = useVehicle();
@@ -64,6 +68,18 @@ export default function PricingDisplay() {
   const [submissionError, setSubmissionError] = useState("");
   const [quoteId, setQuoteId] = useState("");
   const [accessToken, setAccessToken] = useState("");
+  
+  // Modal flow state
+  const [showTitleModal, setShowTitleModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showSchedulingModal, setShowSchedulingModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  
+  // Collected data from modals
+  const [titleData, setTitleData] = useState({});
+  const [pickupLocationData, setPickupLocationData] = useState({});
+  const [schedulingData, setSchedulingData] = useState({});
+  const [paymentData, setPaymentData] = useState({});
 
   // Update local state when context seller info changes (e.g., after login)
   useEffect(() => {
@@ -155,23 +171,161 @@ export default function PricingDisplay() {
     }
   };
 
+  // Modal flow handlers
+  const handleContinueToScheduling = () => {
+    setShowTitleModal(true);
+  };
+
+  const handleTitleContinue = (data) => {
+    setTitleData(data);
+    setShowTitleModal(false);
+    setShowLocationModal(true);
+  };
+
+  const handleLocationContinue = (data) => {
+    setPickupLocationData(data);
+    setShowLocationModal(false);
+    setShowSchedulingModal(true);
+  };
+
+  const handleSchedulingContinue = (data) => {
+    setSchedulingData(data);
+    setShowSchedulingModal(false);
+    setShowPaymentModal(true);
+  };
+
+  const handleFinalSubmit = async (data) => {
+    setPaymentData(data);
+    setIsSubmitting(true);
+    setSubmissionError("");
+
+    try {
+      // Prepare complete pickup scheduling data
+      const fullAddress = `${pickupLocationData.street}, ${pickupLocationData.city}, ${pickupLocationData.state} ${pickupLocationData.zipCode}`;
+      
+      const scheduleData = {
+        accessToken: accessToken,
+        // Title specifics
+        titleSpecifics: titleData,
+        // Pickup location
+        pickupAddress: fullAddress,
+        addressType: pickupLocationData.addressType,
+        specialInstructions: pickupLocationData.instructions,
+        contactName: pickupLocationData.contactName,
+        contactPhone: pickupLocationData.contactPhone,
+        structuredAddress: {
+          street: pickupLocationData.street,
+          city: pickupLocationData.city,
+          state: pickupLocationData.state,
+          zipCode: pickupLocationData.zipCode,
+        },
+        // Pickup scheduling
+        scheduledDate: schedulingData.scheduledDate,
+        pickupWindow: schedulingData.pickupWindow,
+        // Payment details
+        paymentDetails: data,
+      };
+
+      // Submit complete pickup schedule
+      const response = await axios.post("/api/quote/schedule-pickup-complete", scheduleData);
+
+      if (response.data.success) {
+        setShowPaymentModal(false);
+        // Redirect to manage page
+        window.location.href = `/manage/${accessToken}`;
+      } else {
+        setSubmissionError(response.data.error || "Failed to schedule pickup.");
+        setIsSubmitting(false);
+      }
+    } catch (error) {
+      console.error("Error scheduling pickup:", error);
+      setSubmissionError(
+        error.response?.data?.error || "Failed to schedule pickup. Please try again."
+      );
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleModalClose = () => {
+    // Close all modals
+    setShowTitleModal(false);
+    setShowLocationModal(false);
+    setShowSchedulingModal(false);
+    setShowPaymentModal(false);
+  };
+
   const vehicleName = `${vehicleDetails.year} ${vehicleDetails.make} ${vehicleDetails.model}`;
+
+  // Render modals (always available)
+  const renderModals = () => (
+    <>
+      <TitleSpecificsModal
+        open={showTitleModal}
+        onClose={handleModalClose}
+        onContinue={handleTitleContinue}
+        initialData={titleData}
+        vin={vin}
+      />
+
+      <PickupLocationModal
+        open={showLocationModal}
+        onClose={handleModalClose}
+        onContinue={handleLocationContinue}
+        onBack={() => {
+          setShowLocationModal(false);
+          setShowTitleModal(true);
+        }}
+        initialData={{
+          ...pickupLocationData,
+          zipCode: pickupLocationData.zipCode || zipCode || "",
+          city: pickupLocationData.city || locationData?.city || "",
+          state: pickupLocationData.state || locationData?.state || "",
+          contactName: pickupLocationData.contactName || sellerInfo.name || "",
+          contactPhone: pickupLocationData.contactPhone || sellerInfo.phone || "",
+        }}
+      />
+
+      <PickupSchedulingModal
+        open={showSchedulingModal}
+        onClose={handleModalClose}
+        onContinue={handleSchedulingContinue}
+        onBack={() => {
+          setShowSchedulingModal(false);
+          setShowLocationModal(true);
+        }}
+        initialData={schedulingData}
+      />
+
+      <PaymentDetailsModal
+        open={showPaymentModal}
+        onClose={handleModalClose}
+        onSubmit={handleFinalSubmit}
+        onBack={() => {
+          setShowPaymentModal(false);
+          setShowSchedulingModal(true);
+        }}
+        initialData={paymentData}
+        isSubmitting={isSubmitting}
+      />
+    </>
+  );
 
   // Success screen - LinkedIn style
   if (submissionSuccess) {
     return (
-      <Container maxWidth="md" sx={{ py: 8 }}>
-        <Fade in timeout={600}>
-          <Paper
-            elevation={0}
-            sx={{
-              p: 6,
-              borderRadius: 2,
-              border: "1px solid",
-              borderColor: "divider",
-              textAlign: "center",
-            }}
-          >
+      <>
+        <Container maxWidth="md" sx={{ py: 8 }}>
+          <Fade in timeout={600}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 6,
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "divider",
+                textAlign: "center",
+              }}
+            >
             {/* Success Icon */}
             <Box
               sx={{
@@ -271,7 +425,7 @@ export default function PricingDisplay() {
                 variant="contained"
                 size="large"
                 startIcon={<Schedule />}
-                onClick={() => (window.location.href = `/manage/${accessToken}`)}
+                onClick={handleContinueToScheduling}
                 sx={{
                   py: 1.5,
                   textTransform: "none",
@@ -284,7 +438,7 @@ export default function PricingDisplay() {
                   },
                 }}
               >
-                Schedule Pickup Now
+                Continue
               </Button>
               <Button
                 variant="outlined"
@@ -310,6 +464,8 @@ export default function PricingDisplay() {
           </Paper>
         </Fade>
       </Container>
+      {renderModals()}
+      </>
     );
   }
 
@@ -497,6 +653,7 @@ export default function PricingDisplay() {
           </Box>
         </Paper>
       </Box>
+      {renderModals()}
     </Container>
   );
 }

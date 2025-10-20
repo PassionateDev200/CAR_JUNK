@@ -41,6 +41,14 @@ const quoteSchema = new mongoose.Schema(
     },
     vin: { type: String, default: "" },
 
+    // Title Specifics
+    titleSpecifics: {
+      nameOnTitle: { type: String, default: "" },
+      titleVin: { type: String, default: "" },
+      titleIssueState: { type: String, default: "" },
+      vehicleColor: { type: String, default: "" },
+    },
+
     // Customer Information
     customer: {
       name: { type: String, required: true },
@@ -283,6 +291,16 @@ const quoteSchema = new mongoose.Schema(
       },
       confirmedAt: { type: Date, default: null },
       completedAt: { type: Date, default: null },
+    },
+
+    // Payment Details
+    paymentDetails: {
+      payeeName: { type: String, default: "" },
+      paymentMethod: { 
+        type: String, 
+        enum: ["cash", "check", "not_specified"], 
+        default: "not_specified" 
+      },
     },
 
     // Generated vehicle name for display
