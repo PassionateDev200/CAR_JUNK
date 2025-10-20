@@ -258,6 +258,8 @@ export const sendPickupScheduledConfirmation = async ({
   pickupWindow,
   pickupTimeRange,
   pickupAddress,
+  addressType,
+  contactName,
   contactPhone,
   specialInstructions,
   accessToken,
@@ -276,6 +278,8 @@ export const sendPickupScheduledConfirmation = async ({
         pickupWindow,
         pickupTimeRange,
         pickupAddress,
+        addressType,
+        contactName,
         contactPhone,
         specialInstructions,
         accessToken,
@@ -289,6 +293,8 @@ export const sendPickupScheduledConfirmation = async ({
         pickupWindow,
         pickupTimeRange,
         pickupAddress,
+        addressType,
+        contactName,
         contactPhone,
         specialInstructions,
         accessToken,
@@ -311,11 +317,17 @@ export const sendPickupNotificationEmail = async ({
   quote,
   scheduledDate,
   scheduledTime,
+  pickupWindow,
+  pickupTimeRange,
   timeSlot,
+  contactName,
   contactPhone,
   pickupAddress,
+  addressType,
   specialInstructions,
   adminEmail,
+  isReschedule,
+  originalSchedule,
 }) => {
   try {
     // Format the scheduled date nicely
@@ -326,41 +338,47 @@ export const sendPickupNotificationEmail = async ({
       day: "numeric",
     });
 
-    // Format time to 12-hour format
-    const formattedTime = new Date(
-      `1970-01-01T${scheduledTime}`
-    ).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+    // Use pickupWindow and pickupTimeRange if available, fallback to old format
+    const timeDisplay = pickupWindow 
+      ? `${pickupWindow.charAt(0).toUpperCase() + pickupWindow.slice(1)} (${pickupTimeRange})`
+      : scheduledTime ? new Date(`1970-01-01T${scheduledTime}`).toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        }) : timeSlot || "Flexible";
 
     const mailOptions = {
-      from: sender, // Using your existing sender configuration
+      from: sender,
       to: [adminEmail],
-      subject: `✅ Offer Accepted & Pickup Scheduled: ${quote.vehicleName} - $${quote.pricing.finalPrice.toLocaleString()} - Quote ${quote.quoteId}`,
+      subject: `${isReschedule ? '📅 Pickup Rescheduled' : '✅ Offer Accepted & Pickup Scheduled'}: ${quote.vehicleName} - $${quote.pricing.finalPrice.toLocaleString()} - Quote ${quote.quoteId}`,
       text: generatePickupNotificationText({
         quote,
         formattedDate,
-        formattedTime,
-        timeSlot,
+        timeDisplay,
+        contactName,
         contactPhone,
         pickupAddress,
+        addressType,
         specialInstructions,
+        isReschedule,
+        originalSchedule,
       }),
       html: generatePickupNotificationHTML({
         quote,
         formattedDate,
-        formattedTime,
-        timeSlot,
+        timeDisplay,
+        contactName,
         contactPhone,
         pickupAddress,
+        addressType,
         specialInstructions,
+        isReschedule,
+        originalSchedule,
       }),
       category: "Pickup Notification",
     };
 
-    const info = await transport.sendMail(mailOptions); // Using your existing transport
+    const info = await transport.sendMail(mailOptions);
     console.log("📧 Pickup notification email sent successfully:", info);
     return { success: true, info };
   } catch (error) {
@@ -373,24 +391,31 @@ export const sendPickupNotificationEmail = async ({
 const generatePickupNotificationText = ({
   quote,
   formattedDate,
-  formattedTime,
-  timeSlot,
+  timeDisplay,
+  contactName,
   contactPhone,
   pickupAddress,
+  addressType,
   specialInstructions,
+  isReschedule,
+  originalSchedule,
 }) => {
   return `
-✅ OFFER ACCEPTED & PICKUP SCHEDULED
+${isReschedule ? '📅 PICKUP RESCHEDULED' : '✅ OFFER ACCEPTED & PICKUP SCHEDULED'}
 
-A customer has accepted your offer and scheduled a pickup for their vehicle!
+${isReschedule ? 'A customer has rescheduled their vehicle pickup!' : 'A customer has accepted your offer and scheduled a pickup for their vehicle!'}
 
-📅 PICKUP DETAILS
+${isReschedule && originalSchedule ? `
+🔄 ORIGINAL SCHEDULE
+Date: ${new Date(originalSchedule.originalDate).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+Time: ${originalSchedule.originalWindow}
+
+` : ''}📅 ${isReschedule ? 'NEW ' : ''}PICKUP DETAILS
 Date: ${formattedDate}
-Time: ${formattedTime}
-Time Preference: ${timeSlot || "Flexible"}
+Time: ${timeDisplay}
 
 👤 CUSTOMER INFORMATION  
-Name: ${quote.customer.name}
+Name: ${contactName || quote.customer.name}
 Email: ${quote.customer.email}
 Phone: ${contactPhone}
 
@@ -401,7 +426,7 @@ Offer Amount: $${quote.pricing.finalPrice.toLocaleString()}
 ${quote.vin ? `VIN: ${quote.vin}` : ""}
 
 📍 PICKUP ADDRESS
-${pickupAddress}
+${addressType ? `Type: ${addressType.charAt(0).toUpperCase() + addressType.slice(1)}\n` : ''}${pickupAddress}
 
 📝 SPECIAL INSTRUCTIONS
 ${specialInstructions || "None provided"}
@@ -419,11 +444,14 @@ Support Team
 const generatePickupNotificationHTML = ({
   quote,
   formattedDate,
-  formattedTime,
-  timeSlot,
+  timeDisplay,
+  contactName,
   contactPhone,
   pickupAddress,
+  addressType,
   specialInstructions,
+  isReschedule,
+  originalSchedule,
 }) => {
   return `
     <!DOCTYPE html>
@@ -431,11 +459,11 @@ const generatePickupNotificationHTML = ({
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Pickup Scheduled - ${quote.quoteId}</title>
+      <title>${isReschedule ? 'Pickup Rescheduled' : 'Pickup Scheduled'} - ${quote.quoteId}</title>
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; padding: 30px; text-align: center; }
+        .header { background: linear-gradient(135deg, ${isReschedule ? '#3b82f6 0%, #60a5fa 100%' : '#dc2626 0%, #ef4444 100%'}); color: white; padding: 30px; text-align: center; }
         .content { padding: 30px; }
         .section { background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3b82f6; }
         .urgent { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 6px; margin: 20px 0; }
@@ -450,28 +478,38 @@ const generatePickupNotificationHTML = ({
     <body>
       <div class="container">
         <div class="header">
-          <h1>✅ Offer Accepted & Pickup Scheduled</h1>
-          <p>A customer has accepted your offer and scheduled a vehicle pickup</p>
+          <h1>${isReschedule ? '📅 Pickup Rescheduled' : '✅ Offer Accepted & Pickup Scheduled'}</h1>
+          <p>${isReschedule ? 'A customer has rescheduled their vehicle pickup' : 'A customer has accepted your offer and scheduled a vehicle pickup'}</p>
         </div>
         
         <div class="content">
           <div class="urgent">
-            <strong>⚡ Action Required:</strong> The seller has accepted the offer and scheduled pickup. Please coordinate with the customer and update the pickup status in the admin dashboard.
+            <strong>⚡ Action Required:</strong> ${isReschedule ? 'The pickup has been rescheduled.' : 'The seller has accepted the offer and scheduled pickup.'} Please coordinate with the customer and update the pickup status in the admin dashboard.
           </div>
 
+          ${isReschedule && originalSchedule ? `
+          <div class="section" style="border-left-color: #ef4444;">
+            <h3>🔄 Original Schedule</h3>
+            <div class="detail-row">
+              <span class="label">Date:</span>
+              <span class="value">${new Date(originalSchedule.originalDate).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Time:</span>
+              <span class="value">${originalSchedule.originalWindow}</span>
+            </div>
+          </div>
+          ` : ''}
+
           <div class="section">
-            <h3>📅 Pickup Details</h3>
+            <h3>📅 ${isReschedule ? 'New ' : ''}Pickup Details</h3>
             <div class="detail-row">
               <span class="label">Date:</span>
               <span class="value">${formattedDate}</span>
             </div>
             <div class="detail-row">
               <span class="label">Time:</span>
-              <span class="value">${formattedTime}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Time Preference:</span>
-              <span class="value">${timeSlot || "Flexible"}</span>
+              <span class="value">${timeDisplay}</span>
             </div>
           </div>
 
@@ -479,7 +517,7 @@ const generatePickupNotificationHTML = ({
             <h3>👤 Customer Information</h3>
             <div class="detail-row">
               <span class="label">Name:</span>
-              <span class="value">${quote.customer.name}</span>
+              <span class="value">${contactName || quote.customer.name}</span>
             </div>
             <div class="detail-row">
               <span class="label">Email:</span>
@@ -505,20 +543,22 @@ const generatePickupNotificationHTML = ({
               <span class="label">Offer Amount:</span>
               <span class="value">$${quote.pricing.finalPrice.toLocaleString()}</span>
             </div>
-            ${
-              quote.vin
-                ? `
+            ${quote.vin ? `
             <div class="detail-row">
               <span class="label">VIN:</span>
               <span class="value">${quote.vin}</span>
             </div>
-            `
-                : ""
-            }
+            ` : ''}
           </div>
 
           <div class="section">
             <h3>📍 Pickup Address</h3>
+            ${addressType ? `
+            <div class="detail-row" style="margin-bottom: 10px;">
+              <span class="label">Address Type:</span>
+              <span class="value">${addressType.charAt(0).toUpperCase() + addressType.slice(1)}</span>
+            </div>
+            ` : ''}
             <p style="margin: 0; padding: 10px; background: white; border-radius: 4px; border: 1px solid #e5e7eb;">
               ${pickupAddress}
             </p>
@@ -526,9 +566,7 @@ const generatePickupNotificationHTML = ({
 
           <div class="section">
             <h3>📝 Special Instructions</h3>
-            <p style="margin: 0; padding: 10px; background: white; border-radius: 4px; border: 1px solid #e5e7eb; font-style: ${
-              specialInstructions ? "normal" : "italic"
-            };">
+            <p style="margin: 0; padding: 10px; background: white; border-radius: 4px; border: 1px solid #e5e7eb; font-style: ${specialInstructions ? "normal" : "italic"};">
               ${specialInstructions || "None provided"}
             </p>
           </div>

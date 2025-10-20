@@ -16,6 +16,11 @@ import {
   Stack,
   InputAdornment,
   CircularProgress,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  Grid,
 } from "@mui/material";
 import {
   Event as CalendarIcon,
@@ -42,27 +47,58 @@ export default function ScheduleDialog({
     scheduledDate: "",
     pickupWindow: "",
     specialInstructions: "",
+    contactName: quote?.customer?.name || quote?.sellerInfo?.name || "",
     contactPhone: quote?.customer?.phone || quote?.sellerInfo?.phone || "",
-    pickupAddress: quote?.customer?.address || quote?.sellerInfo?.address || "",
+    addressType: "residence",
+    street: "",
+    city: "",
+    state: "",
+    zipCode: "",
   });
   
   const [error, setError] = useState("");
   const [addressVerifying, setAddressVerifying] = useState(false);
   const [addressVerified, setAddressVerified] = useState(false);
+  const [zipLoading, setZipLoading] = useState(false);
 
   // Update state field
-  const handleInputChange = (field, value) => {
+  const handleInputChange = async (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (error) setError("");
     // Reset address verification when address changes
-    if (field === "pickupAddress") {
+    if (["street", "city", "state", "zipCode"].includes(field)) {
       setAddressVerified(false);
+    }
+    
+    // Auto-populate city and state from ZIP code
+    if (field === "zipCode" && value.length === 5) {
+      await fetchCityStateFromZip(value);
+    }
+  };
+
+  // Fetch city and state from ZIP code
+  const fetchCityStateFromZip = async (zipCode) => {
+    setZipLoading(true);
+    try {
+      const response = await axios.get(`/api/zipcode?zip=${zipCode}`);
+      if (response.data.city && response.data.state) {
+        setFormData((prev) => ({
+          ...prev,
+          city: response.data.city,
+          state: response.data.state,
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to fetch city/state from ZIP code:", err);
+      // Don't show error to user, just let them proceed
+    } finally {
+      setZipLoading(false);
     }
   };
 
   // Address verification function
   const verifyAddress = async () => {
-    if (!formData.pickupAddress || formData.pickupAddress.trim().length < 10) {
+    if (!formData.street || !formData.city || !formData.state || !formData.zipCode) {
       setError("Please enter a complete address (Street, City, State, ZIP)");
       return;
     }
@@ -71,18 +107,17 @@ export default function ScheduleDialog({
     setError("");
 
     try {
+      const fullAddress = `${formData.street}, ${formData.city}, ${formData.state} ${formData.zipCode}`;
       const response = await axios.post("/api/verify-address", {
-        address: formData.pickupAddress,
+        address: fullAddress,
       });
 
       if (response.data.verified) {
         setAddressVerified(true);
-        // Optionally update with normalized address
+        // Optionally update with normalized address components
         if (response.data.normalizedAddress) {
-          setFormData((prev) => ({
-            ...prev,
-            pickupAddress: response.data.normalizedAddress,
-          }));
+          // Parse normalized address if needed
+          // For now, we'll just mark it as verified
         }
       } else {
         setError(response.data.error || "Address could not be verified. Please check and try again.");
@@ -102,11 +137,15 @@ export default function ScheduleDialog({
       setError("Please select both a pickup date and time window.");
       return false;
     }
+    if (!formData.contactName || formData.contactName.trim().length < 2) {
+      setError("Please enter a valid contact name.");
+      return false;
+    }
     if (!formData.contactPhone || formData.contactPhone.trim().length < 8) {
       setError("Please enter a valid phone number.");
       return false;
     }
-    if (!formData.pickupAddress || formData.pickupAddress.trim().length < 10) {
+    if (!formData.street || !formData.city || !formData.state || !formData.zipCode) {
       setError("Please enter a complete pickup address.");
       return false;
     }
@@ -134,13 +173,16 @@ export default function ScheduleDialog({
     setError("");
 
     try {
+      const fullAddress = `${formData.street}, ${formData.city}, ${formData.state} ${formData.zipCode}`;
       const response = await axios.post("/api/quote/schedule-pickup", {
         accessToken: quote.accessToken,
         scheduledDate: formData.scheduledDate,
         pickupWindow: formData.pickupWindow,
         specialInstructions: formData.specialInstructions,
+        contactName: formData.contactName,
         contactPhone: formData.contactPhone,
-        pickupAddress: formData.pickupAddress,
+        pickupAddress: fullAddress,
+        addressType: formData.addressType,
       });
 
       if (response.data.success) {
@@ -199,7 +241,7 @@ export default function ScheduleDialog({
     <Dialog
       open={open}
       onClose={() => onOpenChange(false)}
-      maxWidth="sm"
+      maxWidth="md"
       fullWidth
       PaperProps={{
         sx: { borderRadius: 2 },
@@ -223,103 +265,225 @@ export default function ScheduleDialog({
               </Alert>
             )}
 
-            {/* Date */}
-            <Box>
-              <Typography variant="body2" fontWeight={600} gutterBottom>
-                Pickup Date *
-              </Typography>
-              <TextField
-                fullWidth
-                type="date"
-                inputProps={{
-                  min: minDate,
-                  max: maxDateString,
-                }}
-                value={formData.scheduledDate}
-                onChange={(e) => handleInputChange("scheduledDate", e.target.value)}
-                required
-              />
-            </Box>
+            {/* Date and Time Window on same line */}
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" fontWeight={600} gutterBottom>
+                  Pickup Date *
+                </Typography>
+                <TextField
+                  fullWidth
+                  type="date"
+                  inputProps={{
+                    min: minDate,
+                    max: maxDateString,
+                  }}
+                  value={formData.scheduledDate}
+                  onChange={(e) => handleInputChange("scheduledDate", e.target.value)}
+                  required
+                />
+              </Grid>
 
-            {/* Pickup Time Window */}
-            <Box>
-              <Typography variant="body2" fontWeight={600} gutterBottom>
-                Pickup Time Window *
-              </Typography>
-              <TextField
-                fullWidth
-                select
-                value={formData.pickupWindow}
-                onChange={(e) => handleInputChange("pickupWindow", e.target.value)}
-                placeholder="Select pickup window"
-                required
-              >
-                {pickupWindows.map((window) => (
-                  <MenuItem key={window.value} value={window.value}>
-                    {window.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Box>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" fontWeight={600} gutterBottom>
+                  Pickup Time Window *
+                </Typography>
+                <TextField
+                  fullWidth
+                  select
+                  value={formData.pickupWindow}
+                  onChange={(e) => handleInputChange("pickupWindow", e.target.value)}
+                  placeholder="Select pickup window"
+                  required
+                >
+                  {pickupWindows.map((window) => (
+                    <MenuItem key={window.value} value={window.value}>
+                      {window.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            </Grid>
 
-            {/* Phone */}
+            {/* Pickup Location Section */}
             <Box>
-              <Typography variant="body2" fontWeight={600} gutterBottom>
-                Contact Phone *
+              <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 2 }}>
+                Pickup location
               </Typography>
-              <TextField
-                fullWidth
-                placeholder="e.g. (555) 123-4567"
-                value={formData.contactPhone}
-                onChange={(e) => handleInputChange("contactPhone", e.target.value)}
-                required
-                inputProps={{ maxLength: 20 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PhoneIcon sx={{ color: "text.secondary" }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Box>
 
-            {/* Pickup Address */}
-            <Box>
-              <Typography variant="body2" fontWeight={600} gutterBottom>
-                Pickup Address *
-              </Typography>
-              <TextField
-                fullWidth
-                placeholder="Street, City, State, ZIP"
-                value={formData.pickupAddress}
-                onChange={(e) => handleInputChange("pickupAddress", e.target.value)}
-                required
-                inputProps={{ maxLength: 200 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LocationIcon sx={{ color: "text.secondary" }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderColor: addressVerified ? "success.main" : undefined,
-                  },
-                }}
-              />
+              {/* Address Type */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  What type of address is this?
+                </Typography>
+                <FormControl component="fieldset">
+                  <RadioGroup
+                    row
+                    value={formData.addressType}
+                    onChange={(e) => handleInputChange("addressType", e.target.value)}
+                  >
+                    <FormControlLabel
+                      value="residence"
+                      control={<Radio />}
+                      label="Residence"
+                    />
+                    <FormControlLabel
+                      value="business"
+                      control={<Radio />}
+                      label="Business"
+                    />
+                  </RadioGroup>
+                </FormControl>
+              </Box>
+
+              {/* Street Address */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" fontWeight={500} gutterBottom>
+                  Street Address
+                </Typography>
+                <TextField
+                  fullWidth
+                  placeholder="Street Address"
+                  value={formData.street}
+                  onChange={(e) => handleInputChange("street", e.target.value)}
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocationIcon sx={{ color: "text.secondary" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Box>
+
+              {/* City, State, ZIP */}
+              <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid item xs={12} sm={4}>
+                  <Typography variant="body2" fontWeight={500} gutterBottom>
+                    City
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    value={formData.city}
+                    onChange={(e) => handleInputChange("city", e.target.value)}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Typography variant="body2" fontWeight={500} gutterBottom>
+                    State
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    value={formData.state}
+                    onChange={(e) => handleInputChange("state", e.target.value)}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Typography variant="body2" fontWeight={500} gutterBottom>
+                    ZIP code
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    placeholder="97205"
+                    value={formData.zipCode}
+                    onChange={(e) => handleInputChange("zipCode", e.target.value)}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LocationIcon sx={{ color: "text.secondary" }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: zipLoading ? (
+                        <InputAdornment position="end">
+                          <CircularProgress size={16} />
+                        </InputAdornment>
+                      ) : null,
+                    }}
+                  />
+                </Grid>
+              </Grid>
+
+              {/* Special Instructions */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" fontWeight={500} gutterBottom>
+                  Instructions (optional)
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  placeholder="Additional details to help us find your car, like a cross street, gate code, building number or apartment number."
+                  value={formData.specialInstructions}
+                  onChange={(e) => handleInputChange("specialInstructions", e.target.value)}
+                  inputProps={{ maxLength: 500 }}
+                />
+              </Box>
+
+              {/* Contact Name */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" fontWeight={500} gutterBottom>
+                  Contact name
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                  This is the primary name on your account and all future offers.
+                </Typography>
+                <TextField
+                  fullWidth
+                  placeholder="Contact name"
+                  value={formData.contactName}
+                  onChange={(e) => handleInputChange("contactName", e.target.value)}
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocationIcon sx={{ color: "text.secondary" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Box>
+
+              {/* Contact Phone */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" fontWeight={500} gutterBottom>
+                  Contact phone number
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                  This phone number will be tied to your account and all future offers.
+                </Typography>
+                <TextField
+                  fullWidth
+                  placeholder="1231231233"
+                  value={formData.contactPhone}
+                  onChange={(e) => handleInputChange("contactPhone", e.target.value)}
+                  required
+                  inputProps={{ maxLength: 20 }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneIcon sx={{ color: "text.secondary" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Box>
+
+              {/* Verify Address Button */}
               <Button
                 fullWidth
-                variant={addressVerified ? "outlined" : "text"}
+                variant={addressVerified ? "outlined" : "contained"}
                 color={addressVerified ? "success" : "primary"}
                 onClick={verifyAddress}
                 disabled={
                   addressVerifying ||
-                  !formData.pickupAddress ||
-                  formData.pickupAddress.length < 10
+                  !formData.street ||
+                  !formData.zipCode
                 }
-                sx={{ mt: 1 }}
+                sx={{ mt: 2 }}
                 startIcon={
                   addressVerifying ? (
                     <CircularProgress size={16} />
@@ -346,25 +510,6 @@ export default function ScheduleDialog({
                   Address verified and ready for pickup
                 </Typography>
               )}
-            </Box>
-
-            {/* Special Instructions */}
-            <Box>
-              <Typography variant="body2" fontWeight={600} gutterBottom>
-                Special Instructions (Optional)
-              </Typography>
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                placeholder="Any special instructions for pickup (e.g., gate code, parking location, etc.)"
-                value={formData.specialInstructions}
-                onChange={(e) => handleInputChange("specialInstructions", e.target.value)}
-                inputProps={{ maxLength: 500 }}
-              />
-              <Typography variant="caption" color="text.secondary">
-                {formData.specialInstructions.length}/500 characters
-              </Typography>
             </Box>
           </Stack>
         </Box>

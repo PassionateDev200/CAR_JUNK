@@ -16,14 +16,17 @@ export async function POST(request) {
       scheduledDate,
       pickupWindow, // Changed from scheduledTime/timeSlot to pickupWindow
       specialInstructions,
+      contactName,
       contactPhone,
       pickupAddress,
+      addressType,
     } = body;
     // Validate required fields
     if (
       !accessToken ||
       !scheduledDate ||
       !pickupWindow ||
+      !contactName ||
       !contactPhone ||
       !pickupAddress
     ) {
@@ -93,13 +96,34 @@ export async function POST(request) {
       evening: "4:00 PM - 9:00 PM"
     };
 
+    // Parse address into structured components
+    const parseAddress = (address) => {
+      // Expected format: "Street, City, State ZIP"
+      const parts = address.split(',').map(p => p.trim());
+      if (parts.length >= 3) {
+        const street = parts[0] || "";
+        const city = parts[1] || "";
+        const stateZip = parts[2].split(' ');
+        const state = stateZip[0] || "";
+        const zipCode = stateZip[1] || "";
+        return { street, city, state, zipCode };
+      }
+      // Fallback if parsing fails
+      return { street: "", city: "", state: "", zipCode: "" };
+    };
+
+    const structuredAddress = parseAddress(pickupAddress);
+
     // Update quote with pickup details
     quote.pickupDetails = {
       scheduledDate: new Date(scheduledDate),
       pickupWindow: pickupWindow, // Store the window value
       pickupTimeRange: windowTimeRanges[pickupWindow], // Store readable time range
       address: pickupAddress,
+      addressType: addressType || "residence",
+      structuredAddress,
       specialInstructions: specialInstructions || "",
+      contactName,
       contactPhone,
       confirmedAt: new Date(),
       completedAt: null,
@@ -123,6 +147,8 @@ export async function POST(request) {
           newDate: scheduledDate,
           newWindow: pickupWindow,
           newTimeRange: windowTimeRanges[pickupWindow],
+          contactName,
+          addressType,
           specialInstructions,
         },
       });
@@ -131,13 +157,16 @@ export async function POST(request) {
       quote.customerActions.actionHistory.push({
         action: "pickup_scheduled",
         reason: "customer_scheduled_pickup",
-        note: `Pickup scheduled for ${scheduledDate} (${pickupWindow}: ${windowTimeRanges[pickupWindow]})`,
+        note: `Pickup scheduled for ${scheduledDate} (${pickupWindow}: ${windowTimeRanges[pickupWindow]}) at ${addressType}`,
         timestamp: new Date(),
         customerInitiated: true,
         details: {
           scheduledDate,
           pickupWindow,
           pickupTimeRange: windowTimeRanges[pickupWindow],
+          contactName,
+          addressType,
+          pickupAddress,
           specialInstructions,
         },
       });
@@ -149,7 +178,7 @@ export async function POST(request) {
     try {
       await sendPickupScheduledConfirmation({
         to: quote.customer.email,
-        customerName: quote.customer.name,
+        customerName: contactName || quote.customer.name,
         quoteId: quote.quoteId,
         vehicleName: quote.vehicleName,
         offerAmount: quote.pricing.finalPrice,
@@ -157,6 +186,8 @@ export async function POST(request) {
         pickupWindow,
         pickupTimeRange: windowTimeRanges[pickupWindow],
         pickupAddress,
+        addressType,
+        contactName,
         contactPhone,
         specialInstructions: specialInstructions || "",
         accessToken: quote.accessToken,
@@ -177,8 +208,10 @@ export async function POST(request) {
         pickupWindow,
         pickupTimeRange: windowTimeRanges[pickupWindow],
         specialInstructions,
+        contactName,
         contactPhone,
         pickupAddress,
+        addressType,
         adminEmail: process.env.ADMIN_EMAIL,
         isReschedule: isUpdatingSchedule,
         originalSchedule: originalScheduleDetails
@@ -202,7 +235,10 @@ export async function POST(request) {
         pickupWindow,
         pickupTimeRange: windowTimeRanges[pickupWindow],
         address: pickupAddress,
+        addressType,
+        contactName,
         contactPhone,
+        specialInstructions,
       },
       isReschedule: isUpdatingSchedule,
     });

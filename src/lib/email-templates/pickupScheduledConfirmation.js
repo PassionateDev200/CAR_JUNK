@@ -10,6 +10,8 @@ export const generatePickupScheduledConfirmationHTML = ({
   pickupWindow,
   pickupTimeRange,
   pickupAddress,
+  addressType,
+  contactName,
   contactPhone,
   specialInstructions,
   accessToken,
@@ -88,6 +90,12 @@ export const generatePickupScheduledConfirmationHTML = ({
               <span class="label">Time Window:</span>
               <span class="value">${pickupWindow.charAt(0).toUpperCase() + pickupWindow.slice(1)} (${pickupTimeRange})</span>
             </div>
+            ${contactName ? `
+            <div class="detail-row">
+              <span class="label">Contact Name:</span>
+              <span class="value">${contactName}</span>
+            </div>
+            ` : ''}
             <div class="detail-row">
               <span class="label">Contact Phone:</span>
               <span class="value">${contactPhone}</span>
@@ -96,6 +104,12 @@ export const generatePickupScheduledConfirmationHTML = ({
 
           <div class="section">
             <h3>📍 Pickup Location</h3>
+            ${addressType ? `
+            <div class="detail-row" style="margin-bottom: 10px;">
+              <span class="label">Address Type:</span>
+              <span class="value">${addressType.charAt(0).toUpperCase() + addressType.slice(1)}</span>
+            </div>
+            ` : ''}
             <p style="margin: 0; padding: 10px; background: white; border-radius: 4px; border: 1px solid #e5e7eb;">
               ${pickupAddress}
             </p>
@@ -176,6 +190,8 @@ export const generatePickupScheduledConfirmationText = ({
   pickupWindow,
   pickupTimeRange,
   pickupAddress,
+  addressType,
+  contactName,
   contactPhone,
   specialInstructions,
   accessToken,
@@ -203,11 +219,11 @@ Your vehicle pickup has been successfully scheduled. You've accepted our offer a
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Date: ${formattedDate}
 Time Window: ${pickupWindow.charAt(0).toUpperCase() + pickupWindow.slice(1)} (${pickupTimeRange})
-Contact Phone: ${contactPhone}
+${contactName ? `Contact Name: ${contactName}\n` : ''}Contact Phone: ${contactPhone}
 
 📍 PICKUP LOCATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${pickupAddress}
+${addressType ? `Address Type: ${addressType.charAt(0).toUpperCase() + addressType.slice(1)}\n` : ''}${pickupAddress}
 
 ${specialInstructions ? `
 📝 SPECIAL INSTRUCTIONS

@@ -255,8 +255,26 @@ const quoteSchema = new mongoose.Schema(
         enum: ["morning", "afternoon", "evening", "flexible"],
         default: "flexible",
       },
+      pickupWindow: {
+        type: String,
+        enum: ["morning", "afternoon", "evening"],
+        default: null,
+      },
+      pickupTimeRange: { type: String, default: null },
       address: { type: String, default: "" },
+      addressType: {
+        type: String,
+        enum: ["residence", "business"],
+        default: "residence",
+      },
+      structuredAddress: {
+        street: { type: String, default: "" },
+        city: { type: String, default: "" },
+        state: { type: String, default: "" },
+        zipCode: { type: String, default: "" },
+      },
       specialInstructions: { type: String, default: "" },
+      contactName: { type: String, default: "" },
       contactPhone: { type: String, default: "" },
       alternateContact: {
         name: String,
