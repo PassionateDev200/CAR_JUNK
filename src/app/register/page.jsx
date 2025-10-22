@@ -87,7 +87,7 @@ export default function RegisterPage() {
       }
 
       if (!agreedToTerms) {
-        throw new Error("Please agree to the Terms of Service");
+        throw new Error("Please agree to the Terms of Service and Privacy Policy");
       }
 
       // Register using AuthContext (this updates the global auth state)
