@@ -12,12 +12,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { User, LogIn, Mail, Lock, X, Eye, EyeOff } from "lucide-react";
 import { useVehicle, useVehicleDispatch, vehicleActions } from "@/contexts/VehicleContext";
 import { useAuth } from "@/contexts/AuthContext";
-import axios from "@/lib/axios";
 
 export default function AccountModal({ isOpen, onClose, mode = "create", onSuccess }) {
   const vehicleState = useVehicle();
   const dispatch = useVehicleDispatch();
-  const { checkAuth } = useAuth(); // Get checkAuth from AuthContext
+  const { login, register, checkAuth } = useAuth(); // Get auth functions from AuthContext
   
   const [formData, setFormData] = useState({
     email: "",
@@ -78,16 +77,18 @@ export default function AccountModal({ isOpen, onClose, mode = "create", onSucce
     setError("");
 
     try {
-      const endpoint = mode === "create" ? "/api/auth/register" : "/api/auth/login";
-      const resp = await axios.post(endpoint, {
-        email: formData.email,
-        password: formData.password,
-      });
-
-      const data = resp.data;
-
-      // ✅ Update AuthContext to sync with Header
-      await checkAuth();
+      let data;
+      
+      if (mode === "create") {
+        // Use AuthContext register function
+        data = await register({
+          email: formData.email,
+          password: formData.password,
+        });
+      } else {
+        // Use AuthContext login function
+        data = await login(formData.email, formData.password);
+      }
 
       // Persist to context
       dispatch(

@@ -27,11 +27,13 @@ import {
   Login as LoginIcon,
 } from "@mui/icons-material";
 import axios from "@/lib/axios";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
+  const { login: authLogin } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -66,11 +68,8 @@ export default function LoginPage() {
         throw new Error("Please enter a valid email address");
       }
 
-      // Login API call
-      const response = await axios.post("/api/auth/login", {
-        email: formData.email,
-        password: formData.password,
-      });
+      // Login using AuthContext (this updates the global auth state)
+      const response = await authLogin(formData.email, formData.password);
 
       // Handle pending quote if exists
       const pendingQuote = sessionStorage.getItem("pendingQuote");

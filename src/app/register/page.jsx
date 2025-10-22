@@ -31,11 +31,13 @@ import {
   PersonAdd as PersonAddIcon,
 } from "@mui/icons-material";
 import axios from "@/lib/axios";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
+  const { register: authRegister } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -88,8 +90,8 @@ export default function RegisterPage() {
         throw new Error("Please agree to the Terms of Service");
       }
 
-      // Register API call
-      const response = await axios.post("/api/auth/register", {
+      // Register using AuthContext (this updates the global auth state)
+      const response = await authRegister({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
