@@ -8,7 +8,7 @@ import { rateLimit, getClientIP } from "@/lib/rateLimit";
 
 const SESSION_COOKIE = "cj_session";
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+const COOKIE_MAX_AGE = 60 * 60 * 3; // 3 hours
 
 export async function POST(request) {
   try {
@@ -62,16 +62,17 @@ export async function POST(request) {
     const user = await CustomerAuth.create({ email: normalizedEmail, passwordHash });
 
     const token = jwt.sign({ sub: user._id.toString(), email: user.email }, JWT_SECRET, {
-      expiresIn: "7d",
+      expiresIn: "3h",
     });
 
     const res = NextResponse.json({ success: true, user: { email: user.email } });
     res.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Set to false for development to allow HTTP
       sameSite: "lax",
       path: "/",
       maxAge: COOKIE_MAX_AGE,
+      // Don't set domain to allow any host
     });
     
     // Add rate limit headers

@@ -15,17 +15,32 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, []);
 
-  const checkAuth = async () => {
+  const checkAuth = async (retryCount = 0) => {
     try {
       const response = await axios.get("/api/auth/me");
-      if (response.data.user) {
+      console.log("Auth check response:", response.data);
+      if (response.data.authenticated && response.data.user) {
         setUser(response.data.user);
+      } else {
+        console.log("Not authenticated - no user data");
+        setUser(null);
       }
     } catch (error) {
-      console.log("Not authenticated");
+      console.error("Auth check error:", error);
+      
+      // Retry once if it's a network error and we haven't retried yet
+      if (retryCount === 0 && (error.code === 'NETWORK_ERROR' || error.message.includes('timeout'))) {
+        console.log("Retrying auth check...");
+        setTimeout(() => checkAuth(1), 1000);
+        return;
+      }
+      
+      console.log("Not authenticated - error occurred");
       setUser(null);
     } finally {
-      setLoading(false);
+      if (retryCount === 0) {
+        setLoading(false);
+      }
     }
   };
 

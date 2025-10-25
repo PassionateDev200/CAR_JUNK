@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Container,
@@ -42,6 +43,7 @@ import PickupSchedulingModal from "@/components/customer/PickupSchedulingModal";
 import PaymentDetailsModal from "@/components/customer/PaymentDetailsModal";
 
 export default function PricingDisplay() {
+  const router = useRouter();
   const vehicleState = useVehicle();
   const dispatch = useVehicleDispatch();
 
@@ -150,6 +152,9 @@ export default function PricingDisplay() {
         })
       );
 
+      // Mark the final step (Get Your Offer) as completed
+      dispatch(vehicleActions.markStepCompleted(3));
+
       setQuoteId(result.quoteId);
       setAccessToken(result.accessToken);
       setSubmissionSuccess(true);
@@ -231,8 +236,8 @@ export default function PricingDisplay() {
 
       if (response.data.success) {
         setShowPaymentModal(false);
-        // Redirect to manage page
-        window.location.href = `/manage/${accessToken}`;
+        // Use Next.js router instead of hard redirect to preserve authentication
+        router.push(`/manage/${accessToken}`);
       } else {
         setSubmissionError(response.data.error || "Failed to schedule pickup.");
         setIsSubmitting(false);
